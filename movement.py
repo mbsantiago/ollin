@@ -11,30 +11,27 @@ def make_plot(name, data, num=10, show=False, time=365):
     
     plotdata = data['data'][:num,:time]
 
-    range = data['range']
-    ambito = data['mobility']
+    rango = data['range']
     alpha = data['alpha']
-    rango = data['range'] 
-    beta = data['beta']
+    velocidad = data['velocity']
 
     fig, ax = plt.subplots()
     for traj in plotdata:
         X, Y = zip(*traj)
         ax.plot(X,Y)
-    rect = plt.Rectangle([0, 0], range, range, fill=False)
+    rect = plt.Rectangle([0, 0], rango, rango, fill=False)
     ax.add_patch(rect)
 
-    title = 'Especie: {}\nAmbito: {} km2;  Rango: {} km;  Alpha: {};  Beta: {};'.format(
+    title = 'Especie: {}\n  Rango: {} km;  Alpha: {};  Velocidad: {:2.3f} km/dia;'.format(
         name,
-        ambito,
         rango,
         alpha,
-        beta)
+        velocidad)
     plt.title(title)
 
-    extra = 0.05 * range
-    plt.xlim(-extra, range + extra)
-    plt.ylim(-extra, range + extra)
+    extra = 0.05 * rango
+    plt.xlim(-extra, rango + extra)
+    plt.ylim(-extra, rango + extra)
 
     plt.axis('off')
     if show:
@@ -43,10 +40,10 @@ def make_plot(name, data, num=10, show=False, time=365):
         return fig
 
 
-def make_data(mobility, num=MAX_INDIVIDUALS, steps=STEPS, alpha=ALPHA, range=RANGE, beta=BETA):
+def make_data(velocity, num=MAX_INDIVIDUALS, steps=STEPS, alpha=ALPHA, range=RANGE):
     random_positions = np.random.uniform(0, range, [num, 2])
 
-    mean = beta * (mobility * (alpha - 1)/alpha) / 365.0
+    mean = (velocity * (alpha - 1)/alpha)
     stack = [random_positions]
     for _ in xrange(steps):
         random_angles = np.random.uniform(0, 2 * np.pi, [num])
@@ -65,8 +62,7 @@ def make_data(mobility, num=MAX_INDIVIDUALS, steps=STEPS, alpha=ALPHA, range=RAN
         'data': np.stack(stack,1),
         'alpha': alpha,
         'range': range,
-        'mobility': mobility,
-        'beta': beta
+        'velocity': velocity,
     }
     return data
 
@@ -81,7 +77,7 @@ def save_data(name, data):
 def make_and_save(info):
     key, value = info 
     print('Making movement data for species {}'.format(key))
-    print('Species mobility: {}'.format(value['ambito']))
+    print('Species home range: {}'.format(value['ambito']))
     data = make_data()
     save_data(name, data)
     print('Species {} movement data saved'.format(name))
@@ -105,11 +101,11 @@ def main():
     else:
         if not flags.all:
             name = SPECIES.keys()[flags.species]
-            mobility = SPECIES[name]['ambito']
+            home_range = SPECIES[name]['ambito']
             print('Making movement data for species {}'.format(name))
-            print('Species mobility: {}'.format(mobility))
+            print('Species home range: {}'.format(home_range))
 
-            data = make_data(mobility)
+            data = make_data(home_range)
             if flags.plot:
                 make_plot(name, data)
             else:
@@ -121,6 +117,10 @@ def main():
             p.imap(make_and_save, SPECIES.iteritems())
 	    p.close()
 	    p.join()
+
+
+def home_range_to_velocity(home_range, beta=BETA, dt=DT):
+    return beta * home_range / dt
 
 
 if __name__ == '__main__':

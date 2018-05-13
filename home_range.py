@@ -7,7 +7,7 @@ from multiprocessing import Pool
 import movement
 from constants import *
 
-CONSTANTS = {
+PARAMETERS = {
     'alpha': ALPHA,
     'beta': BETA,
     'dx': DX,
@@ -17,25 +17,27 @@ CONSTANTS = {
 
 @contextmanager
 def set_constants(alpha=ALPHA, range=RANGE, dx=DX, dt=DT, beta=BETA):
-    global CONSTANTS 
-    tmp_constants = CONSTANTS
-    CONSTANTS['alpha'] = alpha
-    CONSTANTS['beta'] = beta 
-    CONSTANTS['dx'] = dx 
-    CONSTANTS['dt'] = dt 
-    CONSTANTS['range'] = range 
+    global PARAMETERS 
+    tmp_constants = PARAMETERS
+    PARAMETERS['alpha'] = alpha
+    PARAMETERS['beta'] = beta 
+    PARAMETERS['dx'] = dx 
+    PARAMETERS['dt'] = dt 
+    PARAMETERS['range'] = range 
     yield
-    CONSTANTS = tmp_constants
+    PARAMETERS = tmp_constants
 
 
-def make_grid(mobility, constants=CONSTANTS):
-    dt = CONSTANTS['dt']
-    dx = CONSTANTS['dx']
-    alpha = CONSTANTS['alpha']
-    range = CONSTANTS['range']
-    beta = CONSTANTS['beta']
+def make_grid(home_range, constants=PARAMETERS):
 
-    mov_data = movement.make_data(mobility, num=1, steps=dt, alpha=alpha, range=range, beta=beta)
+    dt = PARAMETERS['dt']
+    dx = PARAMETERS['dx']
+    alpha = PARAMETERS['alpha']
+    range = PARAMETERS['range']
+    beta = PARAMETERS['beta']
+
+    velocity = movement.home_range_to_velocity(home_range, beta=beta, dt=dt)
+    mov_data = movement.make_data(velocity, num=1, steps=dt, alpha=alpha, range=range)
     mov = mov_data['data'][0]
 
     shape = int(np.ceil(range/float(dx)))
@@ -47,8 +49,8 @@ def make_grid(mobility, constants=CONSTANTS):
     return trace
    
 
-def calculate(mobility, constants=CONSTANTS):
-    dx = CONSTANTS['dx']
+def calculate(mobility, constants=PARAMETERS):
+    dx = PARAMETERS['dx']
     grid = make_grid(mobility, constants) 
     area = np.sum(grid) * (dx **2)
     return area
