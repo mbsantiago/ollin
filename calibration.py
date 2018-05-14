@@ -7,6 +7,8 @@ respect to several sources:
     biological data.
     2. Occupancy information provided by the article TODO.
 """
+from __future__ import print_function
+
 from functools import partial
 from multiprocessing import Pool
 import numpy as np  # pylint: disable=import-error
@@ -125,9 +127,12 @@ def calculate_all_mse_home_range(species=None, parameters=None):
 def binary_search_calibration_home_range(
         alpha_range=[1.1, 1.9],
         beta_range=[30, 60],
-        max_depth=5):
+        max_depth=5,
+        range=RANGE):
     for num_step in range(max_depth):
-        print('Step {} of calibration process'.format(num_step))
+        print('Step {}/{} of calibration process'.format(
+            num_step + 1,
+            max_depth))
         mini = 9999
         aindex = 0
         bindex = 0
@@ -136,19 +141,19 @@ def binary_search_calibration_home_range(
                 alpha = alpha_range[nalpha]
                 beta = beta_range[nbeta]
                 msg = '\t---- STEP {}-{}----'
-                msg = msg.format(num_step, 2 * nalpha + nbeta + 1)
+                msg = msg.format(num_step + 1, 2 * nalpha + nbeta + 1)
                 print(msg)
                 msg = '\t[+] Calculating MSE for alpha={:2.3f} '
                 msg += 'and beta={:2.3f}'
                 msg = msg.format(alpha, beta)
                 print(msg)
                 error = calculate_all_mse_home_range(
-                    parameters={'alpha': alpha, 'beta': beta})
+                    parameters={'range': range, 'alpha': alpha, 'beta': beta})
                 if error < mini:
                     aindex = nalpha
                     bindex = nbeta
                     mini = error
-        print('Minimum error at step {} is {:2.3f}'.format(num_step, mini))
+        print('Minimum error at step {} is {:2.3f}'.format(num_step + 1, mini))
 
         malpha = (alpha_range[0] + alpha_range[1]) / 2.0
         mbeta = (beta_range[0] + beta_range[1]) / 2.0
