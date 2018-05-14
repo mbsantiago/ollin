@@ -208,7 +208,7 @@ def calculate_occupancy_distribution(home_range, density, parameters=None):
 
     # Making discretized version of space
     num_sides = int(np.ceil(range / dx))
-    space = np.zeros([num_sides, num_sides, n_trials])
+    space = np.zeros([n_trails, num_sides, num_sides, n_trials])
 
     # Initializing positions
     random_positions = np.random.uniform(0, range, [n_trials, num, 2])
@@ -216,11 +216,9 @@ def calculate_occupancy_distribution(home_range, density, parameters=None):
 
     for _ in xrange(season):
         indices = np.true_divide(random_positions, dx).astype(np.int)
-        for x in xrange(n_trials):
-            index = indices[x]
-            for y in xrange(num):
-                tindex = index[y]
-                space[tindex[0], tindex[1], x] = 1
+        for t in xrange(n_trials):
+            X, Y = np.split(indices[t], 2, -1)
+            space[t: t + 1, X, Y] = 1
 
         random_angles = np.random.uniform(0, 2 * np.pi, [n_trials, num])
         random_directions = np.stack(
