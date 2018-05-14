@@ -205,7 +205,7 @@ def calculate_occupancy_distribution(home_range, density, parameters=None):
 
     # Velocity is a function of home_range and dt
     velocity = movement.home_range_to_velocity(home_range, beta=beta, dt=dt)
-    movement_data = movement.make_data(velocity, num=num, steps=season, alpha=alpha, range=range)['data']
+    movement_data = movement.make_data(velocity, num=num * n_trials, steps=season, alpha=alpha, range=range)['data']
 
     dx = max(velocity, 0.01)
 
