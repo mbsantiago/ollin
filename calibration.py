@@ -129,15 +129,15 @@ def binary_search_calibration_home_range(
         beta_range=[30, 60],
         max_depth=5,
         range=RANGE):
-    for num_step in range(max_depth):
+    for num_step in xrange(max_depth):
         print('Step {}/{} of calibration process'.format(
             num_step + 1,
             max_depth))
         mini = 9999
         aindex = 0
         bindex = 0
-        for nalpha in range(2):
-            for nbeta in range(2):
+        for nalpha in xrange(2):
+            for nbeta in xrange(2):
                 alpha = alpha_range[nalpha]
                 beta = beta_range[nbeta]
                 msg = '\t---- STEP {}-{}----'
