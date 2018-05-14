@@ -25,10 +25,13 @@ def make_grid(movement_data):
     return space
 
 
-def plot(grid, t=0):
+def plot(grid, t=0, transpose=True):
     import matplotlib.pyplot as plt  # pylint: disable=import-error
     fig, axis = plt.subplots()
-    axis.pcolormesh(grid[t, :, :])
+    array = grid[t, :, :]
+    if transpose:
+        array = array.T
+    axis.pcolormesh(array)
     return fig
 
 
