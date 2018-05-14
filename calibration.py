@@ -216,7 +216,7 @@ def calculate_occupancy_distribution(home_range, density, parameters=None):
 
     for _ in xrange(season):
         indices = np.true_divide(random_positions, dx).astype(np.int)
-        Z = np.linspace(0, n_trials, num * n_trials).astype(np.int).reshape([-1, 1])
+        Z = np.linspace(0, n_trials, num * n_trials, endpoint=False).astype(np.int).reshape([-1, 1])
         X, Y = np.split(indices.reshape([-1, 2]), 2, -1)
         space[Z, X, Y] = 1
 
