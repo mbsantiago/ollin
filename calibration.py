@@ -147,6 +147,46 @@ def calculate_all_mse_home_range(species=None, parameters=None):
     return np.mean(errors)
 
 
+def binary_search_calibration_home_range(
+        alpha_range=[1.1, 1.9],
+        beta_range=[30, 60],
+        max_depth=5):
+    for num_step in range(max_depth):
+        print('Step {} of calibration process')
+        mini = 9999
+        aindex = 0
+        bindex = 0
+        for nalpha in range(2):
+            for nbeta in range(2):
+                alpha = alpha_range[nalpha]
+                beta = beta_range[nbeta]
+                print('\t[+] STEP {}-{}'.format(num_step, 2*nalpha + nbeta + 1))
+                print('\t[+] Calculating MSE for alpha={:f2.3} and beta={:f2.3}'.format(alpha, beta))
+                error = calculate_all_mse_home_range(
+                    parameters={'alpha': alpha, 'beta': beta})
+                if error < mini:
+                    aindex = nalpha
+                    bindex = nbeta
+                    mini = error
+
+        malpha = (alpha_range[0] + alpha_range[1]) / 2.0
+        mbeta = (beta_range[0] + beta_range[1]) / 2.0
+
+        if aindex == 0:
+            alpha_range = [alpha_range[0], malpha]
+        else:
+            alpha_range = [malpha, alpha_range[1]]
+
+        if bindex == 0:
+            beta_range = [beta_range[0], mbeta]
+        else:
+            beta_range = [mbeta, beta_range[1]]
+
+        print('New alpha range: {}'.format(alpha_range))
+        print('New beta range: {}'.format(beta_range))
+    return alpha_range, beta_range
+
+
 # Occupancy MSE
 def calculate_occupancy_distribution(home_range, density, parameters=None):
     if parameters is None:
