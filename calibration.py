@@ -208,7 +208,7 @@ def calculate_occupancy_distribution(home_range, density, parameters=None):
 
     # Making discretized version of space
     num_sides = int(np.ceil(range / dx))
-    space = np.zeros([n_trails, num_sides, num_sides, n_trials])
+    space = np.zeros([n_trials, num_sides, num_sides])
 
     # Initializing positions
     random_positions = np.random.uniform(0, range, [n_trials, num, 2])
@@ -233,5 +233,5 @@ def calculate_occupancy_distribution(home_range, density, parameters=None):
         tmp4 = reflections * np.mod(-tmp2, range)
         random_positions = tmp3 + tmp4
 
-    areas = np.sum(space, axis=(0, 1)) / float(num_sides**2)
+    areas = np.sum(space, axis=(1, 2)) / float(num_sides**2)
     return areas
