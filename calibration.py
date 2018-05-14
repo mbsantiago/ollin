@@ -152,7 +152,7 @@ def binary_search_calibration_home_range(
         beta_range=[30, 60],
         max_depth=5):
     for num_step in range(max_depth):
-        print('Step {} of calibration process')
+        print('Step {} of calibration process'.format(num_step))
         mini = 9999
         aindex = 0
         bindex = 0
@@ -168,6 +168,7 @@ def binary_search_calibration_home_range(
                     aindex = nalpha
                     bindex = nbeta
                     mini = error
+        print('Minimum error at step {} is {:2.3f}'.format(num_step, mini))
 
         malpha = (alpha_range[0] + alpha_range[1]) / 2.0
         mbeta = (beta_range[0] + beta_range[1]) / 2.0
@@ -236,4 +237,3 @@ def calculate_occupancy_distribution(home_range, density, parameters=None):
 
     areas = np.sum(space, axis=(0, 1)) / float(num_sides**2)
     return areas
-
