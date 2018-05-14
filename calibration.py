@@ -12,6 +12,7 @@ from multiprocessing import Pool
 import numpy as np
 
 from species_data import SPECIES
+import movement
 from constants import (ALPHA, BETA, DT, RANGE, SEASON)
 
 """
@@ -203,35 +204,18 @@ def calculate_occupancy_distribution(home_range, density, parameters=None):
     num = int(density * range ** 2)
 
     # Velocity is a function of home_range and dt
-    velocity = beta * np.sqrt(home_range) / float(dt)
+    velocity = movement.home_range_to_velocity(home_range, beta=beta, dt=dt)
+    movement_data = movement.make_data(velocity, num=num, steps=season, alpha=alpha, range=range)
+
     dx = max(velocity, 0.01)
 
     # Making discretized version of space
     num_sides = int(np.ceil(range / dx))
     space = np.zeros([n_trials, num_sides, num_sides])
 
-    # Initializing positions
-    random_positions = np.random.uniform(0, range, [n_trials, num, 2])
-    mean = (velocity * (alpha - 1)/alpha)
-
-    for _ in xrange(season):
-        indices = np.true_divide(random_positions, dx).astype(np.int)
-        Z = np.linspace(0, n_trials, num * n_trials, endpoint=False).astype(np.int).reshape([-1, 1])
-        X, Y = np.split(indices.reshape([-1, 2]), 2, -1)
-        space[Z, X, Y] = 1
-
-        random_angles = np.random.uniform(0, 2 * np.pi, [n_trials, num])
-        random_directions = np.stack(
-                [np.cos(random_angles), np.sin(random_angles)], axis=-1)
-        random_magnitudes = mean * np.random.pareto(alpha, [n_trials, num])
-        random_directions *= random_magnitudes[:, :, None]
-
-        tmp1 = random_positions + random_directions
-        tmp2 = np.mod(tmp1, 2 * range)
-        reflections = np.greater(tmp2, range)
-        tmp3 = (1 - reflections) * np.mod(tmp2, range)
-        tmp4 = reflections * np.mod(-tmp2, range)
-        random_positions = tmp3 + tmp4
-
+    indices = np.true_divide(movement_data, dx).astype(np.int)
+    X = np.linspace(0, n_trials, num * n_trials * season, endpoint=False).astype(np.int).reshape([-1, 1])
+    Y, Z = np.split(indices.reshape([-1, 2]), 2, -1)
+    space[X, Y, Z] = 1
     areas = np.sum(space, axis=(1, 2)) / float(num_sides**2)
     return areas
