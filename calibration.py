@@ -161,7 +161,7 @@ def binary_search_calibration_home_range(
                 alpha = alpha_range[nalpha]
                 beta = beta_range[nbeta]
                 print('\t[+] STEP {}-{}'.format(num_step, 2*nalpha + nbeta + 1))
-                print('\t[+] Calculating MSE for alpha={:f2.3} and beta={:f2.3}'.format(alpha, beta))
+                print('\t[+] Calculating MSE for alpha={:2.3f} and beta={:2.3f}'.format(alpha, beta))
                 error = calculate_all_mse_home_range(
                     parameters={'alpha': alpha, 'beta': beta})
                 if error < mini:
