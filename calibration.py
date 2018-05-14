@@ -93,13 +93,17 @@ def calculate_home_range_distribution(home_range, parameters=None):
     return areas
 
 
-def calculate_single_mse_home_range(home_range, parameters=None):
+def calculate_single_mse_home_range(home_range, parameters=None, normalized=True):
     """calculate Mean Square Error of estimated home range vs given
     """
     distribution = calculate_home_range_distribution(
         home_range,
         parameters=parameters)
-    error = np.mean((distribution - home_range) ** 2)
+    if normalized:
+        variance = np.var(distribution)
+    else:
+        variance = 1
+    error = np.mean((distribution - home_range) ** 2 / variance)
     return error
 
 
