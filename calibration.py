@@ -9,7 +9,7 @@ respect to several sources:
 """
 from functools import partial
 from multiprocessing import Pool
-import numpy as np
+import numpy as np  # pylint: disable=import-error
 
 from species_data import SPECIES
 import movement
@@ -60,7 +60,7 @@ def calculate_home_range_distribution(home_range, parameters=None):
     n_trials = parameters.get('n_trials', 1000)
 
     # Velocity is a function of home_range and dt
-    velocity = beta * np.sqrt(home_range) / float(dt)
+    velocity = movement.home_range_to_velocity(home_range, beta=beta, dt=dt)
     dx = max(velocity, 0.01)
 
     # Making discretized version of space
@@ -94,7 +94,10 @@ def calculate_home_range_distribution(home_range, parameters=None):
     return areas
 
 
-def calculate_single_mse_home_range(home_range, parameters=None, normalized=True):
+def calculate_single_mse_home_range(
+        home_range,
+        parameters=None,
+        normalized=True):
     """calculate Mean Square Error of estimated home range vs given
     """
     distribution = calculate_home_range_distribution(
@@ -161,8 +164,13 @@ def binary_search_calibration_home_range(
             for nbeta in range(2):
                 alpha = alpha_range[nalpha]
                 beta = beta_range[nbeta]
-                print('\t[+] STEP {}-{}'.format(num_step, 2*nalpha + nbeta + 1))
-                print('\t[+] Calculating MSE for alpha={:2.3f} and beta={:2.3f}'.format(alpha, beta))
+                msg = '\t---- STEP {}-{}----'
+                msg = msg.format(num_step, 2 * nalpha + nbeta + 1)
+                print(msg)
+                msg = '\t[+] Calculating MSE for alpha={:2.3f} '
+                msg += 'and beta={:2.3f}'
+                msg = msg.format(alpha, beta)
+                print(msg)
                 error = calculate_all_mse_home_range(
                     parameters={'alpha': alpha, 'beta': beta})
                 if error < mini:
@@ -205,7 +213,14 @@ def calculate_occupancy_distribution(home_range, density, parameters=None):
 
     # Velocity is a function of home_range and dt
     velocity = movement.home_range_to_velocity(home_range, beta=beta, dt=dt)
-    movement_data = movement.make_data(velocity, num=num * n_trials, steps=season, alpha=alpha, range=range)['data']
+    movement_data = movement.make_data(
+        velocity,
+        num=num*n_trials,
+        steps=season,
+        alpha=alpha, range=range)['data']
+    print(movement_data.shape)
+    movement_data = np.swapaxes(movement_data, 0, 1)
+    print(movement_data.shape)
 
     dx = max(velocity, 0.01)
 
@@ -214,7 +229,10 @@ def calculate_occupancy_distribution(home_range, density, parameters=None):
     space = np.zeros([n_trials, num_sides, num_sides])
 
     indices = np.true_divide(movement_data, dx).astype(np.int)
-    X = np.linspace(0, n_trials, num * n_trials * season, endpoint=False).astype(np.int).reshape([-1, 1])
+    X = np.linspace(
+        0, n_trials,
+        num * n_trials * season,
+        endpoint=False).astype(np.int).reshape([-1, 1])
     Y, Z = np.split(indices.reshape([-1, 2]), 2, -1)
     space[X, Y, Z] = 1
     areas = np.sum(space, axis=(1, 2)) / float(num_sides**2)
