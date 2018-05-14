@@ -11,9 +11,11 @@ from functools import partial
 from multiprocessing import Pool
 import numpy as np  # pylint: disable=import-error
 
-from species_data import SPECIES
 import movement
-from constants import (ALPHA, BETA, DT, RANGE, SEASON)
+import home_range
+import occupancy
+from species_data import SPECIES, COMMON_SPECIES
+from constants import (ALPHA, BETA, DT, RANGE, SEASON, MIN_VELOCITY)
 
 """
 So far simulation depends of the following parameters:
@@ -35,22 +37,10 @@ So far simulation depends of the following parameters:
     8. DT: Number of days to be used in the home range calculation.
 """
 
-ARTICLE_SPECIES = [
-    ("Spilogale putorius", 0.245, 0.023),
-    ("Cervus canadensis", 0.585, 0.024),
-    ("Puma concolor", 0.600, 0.030),
-    ("Canis latrans", 0.861, 0.031),
-    ("Lynx rufus", 0.970, 0.040),
-    ("Urocyon cinereoargenteus", 0.400, 0.063),
-    ("Ursus americanus", 0.504, 0.072),
-    ("Odocoileus hemionus", 0.925, 0.141),
-    ("Sylvilagus nuttallii", 0.925, 0.190)
-]
-
 # Home range MSE
 
 
-def calculate_home_range_distribution(home_range, parameters=None):
+def calculate_home_range_distribution(hrange, parameters=None):
     if parameters is None:
         parameters = {}
     alpha = parameters.get('alpha', ALPHA)
@@ -60,54 +50,35 @@ def calculate_home_range_distribution(home_range, parameters=None):
     n_trials = parameters.get('n_trials', 1000)
 
     # Velocity is a function of home_range and dt
-    velocity = movement.home_range_to_velocity(home_range, beta=beta, dt=dt)
+    velocity = movement.home_range_to_velocity(hrange, beta=beta, dt=dt)
     dx = max(velocity, 0.01)
 
-    # Making discretized version of space
-    num_sides = int(np.ceil(range / dx))
-    space = np.zeros([num_sides, num_sides, n_trials])
+    movement_data = movement.make_data(
+        velocity,
+        num=n_trials,
+        steps=dt,
+        alpha=alpha,
+        range=range)
 
-    # Initializing positions
-    random_positions = np.random.uniform(0, range, [n_trials, 2])
-    mean = (velocity * (alpha - 1)/alpha)
-
-    for _ in xrange(dt):
-        indices = np.true_divide(random_positions, dx).astype(np.int)
-        for x in xrange(n_trials):
-            index = indices[x]
-            space[index[0], index[1], x] = 1
-
-        random_angles = np.random.uniform(0, 2 * np.pi, [n_trials])
-        random_directions = np.stack(
-            [np.cos(random_angles), np.sin(random_angles)], axis=-1)
-        random_magnitudes = mean * np.random.pareto(alpha, [n_trials])
-        random_directions *= random_magnitudes[:, None]
-
-        tmp1 = random_positions + random_directions
-        tmp2 = np.mod(tmp1, 2 * range)
-        reflections = np.greater(tmp2, range)
-        tmp3 = (1 - reflections) * np.mod(tmp2, range)
-        tmp4 = reflections * np.mod(-tmp2, range)
-        random_positions = tmp3 + tmp4
-
-    areas = np.sum(space, axis=(0, 1)) * dx**2
+    grid = home_range.make_grid(movement_data)
+    areas = np.sum(grid, axis=(1, 2)) * dx**2
     return areas
 
 
 def calculate_single_mse_home_range(
-        home_range,
+        hrange,
         parameters=None,
         normalized=True):
     """calculate Mean Square Error of estimated home range vs given
     """
     distribution = calculate_home_range_distribution(
-        home_range,
+        hrange,
         parameters=parameters)
     if normalized:
         variance = np.var(distribution)
     else:
         variance = 1
-    error = np.mean((distribution - home_range) ** 2 / variance)
+    error = np.mean((distribution - hrange) ** 2 / variance)
     return error
 
 
@@ -118,7 +89,7 @@ def calculate_all_home_range_distributions(species=None, parameters=None):
     if species is None:
         species = SPECIES.keys()
 
-    home_ranges = [SPECIES[spec]['ambito'] for spec in species]
+    home_ranges = [SPECIES[spec]['home_range'] for spec in species]
 
     p_pool = Pool()
     errors = p_pool.map(
@@ -139,7 +110,7 @@ def calculate_all_mse_home_range(species=None, parameters=None):
     if species is None:
         species = SPECIES.keys()
 
-    home_ranges = [SPECIES[spec]['ambito'] for spec in species]
+    home_ranges = [SPECIES[spec]['home_range'] for spec in species]
 
     p_pool = Pool()
     errors = p_pool.map(
@@ -208,32 +179,46 @@ def calculate_occupancy_distribution(home_range, density, parameters=None):
     dt = parameters.get('dt', DT)
     season = parameters.get('season', SEASON)
     n_trials = parameters.get('n_trials', 1000)
-
     num = int(density * range ** 2)
 
     # Velocity is a function of home_range and dt
     velocity = movement.home_range_to_velocity(home_range, beta=beta, dt=dt)
+    dx = max(velocity, MIN_VELOCITY)
+    num_sides = int(np.ceil(range / dx))
     movement_data = movement.make_data(
         velocity,
         num=num*n_trials,
         steps=season,
-        alpha=alpha, range=range)['data']
-    print(movement_data.shape)
-    movement_data = np.swapaxes(movement_data, 0, 1)
-    print(movement_data.shape)
+        alpha=alpha, range=range)
 
-    dx = max(velocity, 0.01)
+    grid = occupancy.make_grid(movement_data, num_trials=n_trials)
+    proportions = np.sum(grid, axis=(1, 2)) / float(num_sides ** 2)
+    return proportions
 
-    # Making discretized version of space
-    num_sides = int(np.ceil(range / dx))
-    space = np.zeros([n_trials, num_sides, num_sides])
 
-    indices = np.true_divide(movement_data, dx).astype(np.int)
-    X = np.linspace(
-        0, n_trials,
-        num * n_trials * season,
-        endpoint=False).astype(np.int).reshape([-1, 1])
-    Y, Z = np.split(indices.reshape([-1, 2]), 2, -1)
-    space[X, Y, Z] = 1
-    areas = np.sum(space, axis=(1, 2)) / float(num_sides**2)
+def _aux_occupancy(data, parameters=None):
+    home_range, density = data
+    areas = calculate_occupancy_distribution(
+        home_range, density, parameters=parameters)
     return areas
+
+
+def calculate_all_occupancy_distributions(species=None, parameters=None):
+    """Calculates distribution of simulated occupancy for all species
+
+    Species simulated are contained in the COMMON_SPECIES dictionary"""
+    if species is None:
+        species = COMMON_SPECIES.keys()
+
+    data = [
+        (COMMON_SPECIES[spec]['home_range'], COMMON_SPECIES[spec]['density'])
+        for spec in species]
+
+    p_pool = Pool()
+    dists = p_pool.map(
+            partial(_aux_occupancy, parameters=parameters),
+            data)
+    p_pool.close()
+    p_pool.join()
+
+    return np.array(dists)

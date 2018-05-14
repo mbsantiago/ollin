@@ -1,40 +1,36 @@
-import os
-import numpy as np
+import numpy as np  # pylint: disable=import-error
 
-from constants import *
-
-
-def make_grid(data, dx=DX):
-    range = data['range']
-    bins = int(np.ceil(range / dx))
-
-    mov_data = data['data']
-    length = mov_data.shape[1]
-    
-    stack = []
-    for t in xrange(length):
-        array = np.zeros([bins, bins])
-        indices = np.floor_divide(mov_data[:, t, :], dx).reshape([-1,2]).astype(np.int)
-        X = indices[:,0]
-        Y = indices[:,1]
-        array[X, Y] = 1
-        stack.append(array)
-    grid = np.stack(stack)
-    return grid
+from constants import MIN_VELOCITY
 
 
-def plot_grid(grid, t=0):
-    fig, ax = plt.subplots()
-    ax.pcolormesh(grid[:,:,0])
+def make_grid(movement_data, num_trials=1):
+    array = movement_data['data']
+    range = movement_data['range']
+    dx = max(movement_data['velocity'], MIN_VELOCITY)
+    num_sides = int(np.ceil(range / dx))
+
+    runs = array.shape[0]
+    steps = array.shape[1]
+
+    space = np.zeros([num_trials, num_sides, num_sides])
+    indices = np.true_divide(array, dx).astype(np.int)
+
+    xcoords = np.linspace(
+        0, num_trials,
+        runs * steps,
+        endpoint=False).astype(np.int).reshape([-1, 1])
+    ycoords, zcoords = np.split(indices.reshape([-1, 2]), 2, -1)
+    space[xcoords, ycoords, zcoords] = 1
+
+    return space
+
+
+def plot(grid, t=0, transpose=True):
+    import matplotlib.pyplot as plt  # pylint: disable=import-error
+    fig, axis = plt.subplots()
+    if transpose:
+        array = grid[t, :, :].T
+    else:
+        array = grid[t, :, :]
+    axis.pcolormesh(array)
     return fig
-
-
-def calculate(data, dx=DX, season=SEASON):
-    grid = make_grid(data, dx=dx)
-    nsteps = max(len(grid) - season, 1)
-    values = np.array([np.mean(np.amax(grid[i: i + season], axis=0)) for i in xrange(nsteps)])
-    return values
-
-
-def estimate(detection_data):
-    pass

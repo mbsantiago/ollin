@@ -1,72 +1,39 @@
-from contextlib import contextmanager
+import numpy as np  # pylint: disable=import-error
 
-import numpy as np
-import matplotlib.pyplot as plt
-from multiprocessing import Pool
-
-import movement
-from constants import (ALPHA, BETA, DT, RANGE)
-
-PARAMETERS = {
-    'alpha': ALPHA,
-    'beta': BETA,
-    'dt': DT,
-    'range': RANGE
-}
+from constants import MIN_VELOCITY
 
 
-@contextmanager
-def set_constants(alpha=ALPHA, range=RANGE, dt=DT, beta=BETA):
-    global PARAMETERS
-    tmp_constants = PARAMETERS
-    PARAMETERS['alpha'] = alpha
-    PARAMETERS['beta'] = beta
-    PARAMETERS['dt'] = dt
-    PARAMETERS['range'] = range
-    yield
-    PARAMETERS = tmp_constants
+def make_grid(movement_data):
+    array = movement_data['data']
+
+    range = movement_data['range']
+    dx = max(movement_data['velocity'], MIN_VELOCITY)
+    num_sides = int(np.ceil(range / dx))
+    num_trials = array.shape[0]
+    steps = array.shape[1]
+
+    space = np.zeros([num_trials, num_sides, num_sides])
+    indices = np.true_divide(array, dx).astype(np.int)
+
+    X = np.linspace(
+        0, num_trials,
+        num_trials * steps,
+        endpoint=False).astype(np.int).reshape([-1, 1])
+    Y, Z = np.split(indices.reshape([-1, 2]), 2, -1)
+    space[X, Y, Z] = 1
+
+    return space
 
 
-def make_grid(home_range, constants=PARAMETERS):
-
-    dt = PARAMETERS['dt']
-    alpha = PARAMETERS['alpha']
-    range = PARAMETERS['range']
-    beta = PARAMETERS['beta']
-
-    velocity = movement.home_range_to_velocity(home_range, beta=beta, dt=dt)
-    dx = max(velocity, 0.01)
-    mov_data = movement.make_data(
-        velocity, num=1, steps=dt, alpha=alpha, range=range)
-    mov = mov_data['data'][0]
-
-    shape = int(np.ceil(range/float(dx)))
-    indices = np.floor_divide(mov, dx).astype(np.int)
-
-    trace = np.zeros([shape, shape])
-    for index in indices:
-        trace[index[0], index[1]] = 1
-    return trace
+def plot(grid, t=0):
+    import matplotlib.pyplot as plt  # pylint: disable=import-error
+    fig, axis = plt.subplots()
+    axis.pcolormesh(grid[t, :, :])
+    return fig
 
 
-def calculate(mobility, constants=PARAMETERS):
-    dx = PARAMETERS['dx']
-    grid = make_grid(mobility, constants)
-    area = np.sum(grid) * (dx ** 2)
-    return area
-
-
-def estimate(mobility, N, alpha=ALPHA, range=RANGE, dt=DT, beta=BETA):
-    with set_constants(alpha=alpha, range=range, dt=dt, beta=beta):
-        p = Pool()
-        results = p.map(calculate, [mobility for _ in xrange(N)])
-        p.close()
-        p.join()
-    return results
-
-
-def MSE(mobility, N, alpha=ALPHA, range=RANGE, dt=DT, beta=BETA):
-    estimation = estimate(
-        mobility, N, alpha=alpha, range=range, dt=dt, beta=beta)
-    mse = np.mean((np.array(estimation) - mobility)**2)
-    return mse
+def calculate(movement_data):
+    grid = make_grid(movement_data)
+    dx = max(movement_data['velocity'], MIN_VELOCITY)
+    areas = np.sum(grid, axis=(1, 2)) * dx**2
+    return np.mean(areas)

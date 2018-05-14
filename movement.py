@@ -8,7 +8,7 @@ import numpy as np  # pylint: disable=import-error
 from constants import (MAX_INDIVIDUALS, RANGE, ALPHA, BETA, STEPS, DT)
 
 
-def make_plot(name, data, num=10, show=False, time=365):
+def plot(data, num=10, show=False, time=365):
     """Use data to plot sample trajectories"""
     import matplotlib.pyplot as plt  # pylint: disable=import-error
     plotdata = data['data'][:num, :time]
@@ -20,10 +20,9 @@ def make_plot(name, data, num=10, show=False, time=365):
     rect = plt.Rectangle([0, 0], data['range'], data['range'], fill=False)
     axis.add_patch(rect)
 
-    title = 'Especie: {}\n  Rango: {} km;'
+    title = 'Rango: {} km;'
     title += ' Alpha: {};  Velocidad: {:2.3f} km/dia;'
     title = title.format(
-        name,
         data['range'],
         data['alpha'],
         data['velocity'])
@@ -52,7 +51,7 @@ def make_data(
 
     mean = (velocity * (alpha - 1)/alpha)
     stack = [random_positions]
-    for _ in xrange(steps):
+    for _ in xrange(steps - 1):
         random_angles = np.random.uniform(0, 2 * np.pi, [num])
         random_directions = np.stack(
             [np.cos(random_angles), np.sin(random_angles)], axis=-1)
