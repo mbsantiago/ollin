@@ -37,7 +37,7 @@ def make_grid(home_range, constants=PARAMETERS):
     velocity = movement.home_range_to_velocity(home_range, beta=beta, dt=dt)
     dx = max(velocity, 0.01)
     mov_data = movement.make_data(
-        velocity, num=1, steps=dt, alpha=alpha, range=range)['data']
+        velocity, num=1, steps=dt, alpha=alpha, range=range)
     mov = mov_data['data'][0]
 
     shape = int(np.ceil(range/float(dx)))
