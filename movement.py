@@ -120,7 +120,7 @@ def main():
 
 
 def home_range_to_velocity(home_range, beta=BETA, dt=DT):
-    return beta * home_range / dt
+    return beta * np.sqrt(home_range) / float(dt)
 
 
 if __name__ == '__main__':
