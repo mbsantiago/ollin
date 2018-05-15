@@ -141,7 +141,7 @@ def sweep_search_calibration_home_range(
         (i, j, {'alpha': alpha_range[i], 'beta': beta_range[j]})
         for i in xrange(resolution) for j in xrange(resolution)
     ]
-    result = np.zero([resolution, resolution])
+    result = np.zeros([resolution, resolution])
 
     for i, j, arg in tqdm(arguments):
         err = calculate_all_mse_home_range(parameters=arg)
