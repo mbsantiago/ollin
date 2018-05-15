@@ -18,7 +18,9 @@ import movement
 import home_range
 import occupancy
 from species_data import SPECIES, COMMON_SPECIES
-from constants import (ALPHA, BETA, DT, RANGE, SEASON, MIN_VELOCITY)
+from constants import (ALPHA, BETA, GAMMA, DELTA, DT,
+                       RANGE, SEASON, MIN_VELOCITY, OMEGA,
+                       KAPPA)
 
 """
 So far simulation depends of the following parameters:
@@ -205,26 +207,34 @@ def binary_search_calibration_home_range(
 
 
 # Occupancy MSE
-def calculate_occupancy_distribution(home_range, density, parameters=None):
+def calculate_occupancy_distribution(home_range, occup, parameters=None):
     if parameters is None:
         parameters = {}
 
     alpha = parameters.get('alpha', ALPHA)
     beta = parameters.get('beta', BETA)
+    gamma = parameters.get('gamma', GAMMA)
+    delta = parameters.get('delta', DELTA)
     range = parameters.get('range', RANGE)
+    omega = parameters.get('omega', OMEGA)
+    kappa = parameters.get('kappa', KAPPA)
     dt = parameters.get('dt', DT)
     season = parameters.get('season', SEASON)
     n_trials = parameters.get('n_trials', 1000)
-    num = int(density * range ** 2)
+    num = int(omega * (occup ** kappa) * range ** 2 / home_range)
 
     # Velocity is a function of home_range and dt
     velocity = movement.home_range_to_velocity(home_range, beta=beta, dt=dt)
     dx = max(velocity, MIN_VELOCITY)
     num_sides = int(np.ceil(range / dx))
+
     movement_data = movement.make_data(
         velocity,
         num=num*n_trials,
+        occupancy=occup,
         steps=season,
+        gamma=gamma,
+        delta=delta,
         alpha=alpha, range=range)
 
     grid = occupancy.make_grid(movement_data, num_trials=n_trials)
@@ -233,9 +243,9 @@ def calculate_occupancy_distribution(home_range, density, parameters=None):
 
 
 def _aux_occupancy(data, parameters=None):
-    home_range, density = data
+    home_range, occup = data
     areas = calculate_occupancy_distribution(
-        home_range, density, parameters=parameters)
+        home_range, occup, parameters=parameters)
     return areas
 
 
@@ -247,7 +257,10 @@ def calculate_all_occupancy_distributions(species=None, parameters=None):
         species = COMMON_SPECIES.keys()
 
     data = [
-        (COMMON_SPECIES[spec]['home_range'], COMMON_SPECIES[spec]['density'])
+        (
+            COMMON_SPECIES[spec]['home_range'],
+            COMMON_SPECIES[spec]['occupancy']
+        )
         for spec in species]
 
     p_pool = Pool()
