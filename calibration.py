@@ -12,6 +12,7 @@ from __future__ import print_function
 from functools import partial
 from multiprocessing import Pool
 import numpy as np  # pylint: disable=import-error
+from tqdm import tqdm
 
 import movement
 import home_range
@@ -122,6 +123,36 @@ def calculate_all_mse_home_range(species=None, parameters=None):
     p_pool.join()
 
     return np.mean(errors)
+
+
+def sweep_search_calibration_home_range(
+        alpha_range=[1.1, 1.9],
+        beta_range=[30, 60],
+        resolution=10,
+        range=RANGE):
+    alpha_range = np.linspace(alpha_range[0], alpha_range[1], resolution)
+    beta_range = np.linspace(beta_range[0], beta_range[1], resolution)
+
+    mini = 9999
+    amin = 0
+    bmin = 0
+
+    arguments = [
+        (i, j, {'alpha': alpha_range[i], 'beta': beta_range[j]})
+        for i in xrange(resolution) for j in xrange(resolution)
+    ]
+    result = np.zero([resolution, resolution])
+
+    for i, j, arg in tqdm(arguments):
+        err = calculate_all_mse_home_range(parameters=arg)
+        result[i, j] = err
+
+        if err < mini:
+            mini = err
+            amin = alpha_range[i]
+            bmin = beta_range[j]
+
+    return result, mini, amin, bmin
 
 
 def binary_search_calibration_home_range(
