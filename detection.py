@@ -1,6 +1,4 @@
-import os
 import numpy as np
-import time
 
 from constants import *
 
@@ -53,7 +51,7 @@ def make_random_camera_conf(num):
 def make_detection_data(movement_data, camera_config):
     camera_position = camera_config['positions']
     camera_direction = camera_config['directions']
-    species_movement = movement_data['data']
+    species_movement = movement_data.data
 
     relative_pos = species_movement[:, :, None, :] - camera_position[None, None, :, :]
     norm = np.sqrt(np.sum(relative_pos**2, -1))

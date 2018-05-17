@@ -14,12 +14,11 @@ from multiprocessing import Pool
 import numpy as np  # pylint: disable=import-error
 from tqdm import tqdm
 
-import movement
+from movement import MovementData, home_range_to_velocity
 import home_range
 import occupancy
 from species_data import SPECIES, COMMON_SPECIES
-from constants import (ALPHA, BETA, GAMMA, DELTA, DT,
-                       RANGE, SEASON, MIN_VELOCITY, OMEGA,
+from constants import (BETA, DT, RANGE, SEASON, MIN_VELOCITY, OMEGA,
                        KAPPA)
 
 """
@@ -48,21 +47,22 @@ So far simulation depends of the following parameters:
 def calculate_home_range_distribution(hrange, parameters=None):
     if parameters is None:
         parameters = {}
-    alpha = parameters.get('alpha', ALPHA)
+
     beta = parameters.get('beta', BETA)
     range = parameters.get('range', RANGE)
     dt = parameters.get('dt', DT)
     n_trials = parameters.get('n_trials', 1000)
+    occup = parameters.get('occupancy', 1)
 
     # Velocity is a function of home_range and dt
-    velocity = movement.home_range_to_velocity(hrange, beta=beta, dt=dt)
+    velocity = home_range_to_velocity(hrange, beta=beta, dt=dt)
     dx = max(velocity, 0.01)
 
-    movement_data = movement.make_data(
+    movement_data = MovementData(
+        occup,
         velocity,
         num=n_trials,
         steps=dt,
-        alpha=alpha,
         range=range)
 
     grid = home_range.make_grid(movement_data)

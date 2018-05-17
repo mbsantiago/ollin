@@ -4,9 +4,9 @@ from constants import MIN_VELOCITY
 
 
 def make_grid(movement_data, num_trials=1):
-    array = movement_data['data']
-    range = movement_data['range']
-    dx = max(movement_data['velocity'], MIN_VELOCITY)
+    array = movement_data.data
+    range = movement_data.range
+    dx = max(movement_data.velocity, MIN_VELOCITY)
     num_sides = int(np.ceil(range / dx))
 
     runs = array.shape[0]

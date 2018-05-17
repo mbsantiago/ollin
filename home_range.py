@@ -4,10 +4,10 @@ from constants import MIN_VELOCITY
 
 
 def make_grid(movement_data):
-    array = movement_data['data']
+    array = movement_data.data
 
-    range = movement_data['range']
-    dx = max(movement_data['velocity'], MIN_VELOCITY)
+    range = movement_data.range
+    dx = max(movement_data.velocity, MIN_VELOCITY)
     num_sides = int(np.ceil(range / dx))
     num_trials = array.shape[0]
     steps = array.shape[1]
@@ -37,6 +37,6 @@ def plot(grid, t=0, transpose=True):
 
 def calculate(movement_data):
     grid = make_grid(movement_data)
-    dx = max(movement_data['velocity'], MIN_VELOCITY)
+    dx = max(movement_data.velocity, MIN_VELOCITY)
     areas = np.sum(grid, axis=(1, 2)) * dx**2
     return np.mean(areas)
