@@ -163,3 +163,7 @@ def calculate_occupancy(density, range, resolution=1.0):
         density_approximation)
     return np.mean(occupation_space), density_approximation
 
+
+def make_data(range, occupancy, num, velocity):
+    initial_data = InitialCondition(range, occupancy, num, velocity)
+    return initial_data

@@ -7,7 +7,7 @@ respect to several sources:
     biological data.
     2. Occupancy information provided by the article TODO.
 """
-# pylint: disable=F405
+# pylint: disable=F403
 from __future__ import print_function
 
 from functools import partial
@@ -15,11 +15,10 @@ from multiprocessing import Pool
 import numpy as np  # pylint: disable=import-error
 from tqdm import tqdm
 
-from movement import MovementData, home_range_to_velocity
+import movement
 import home_range
 import occupancy
-from species_data import DATA
-from constants import *
+from constants import * 
 
 """
 So far simulation depends of the following parameters:
@@ -54,9 +53,10 @@ def calculate_home_range_distribution_0(hrange, occup, parameters=None):
     n_individuals = parameters.get('n_individuals', 100)
 
     # Velocity is a function of home_range and dt
-    velocity = home_range_to_velocity(hrange, beta=beta, dt=dt, power=power)
+    velocity = movement.home_range_to_velocity(
+        hrange, beta=beta, dt=dt, power=power)
 
-    movement_data = MovementData(
+    movement_data = movement.make_data(
         velocity,
         occup,
         num=n_individuals,
