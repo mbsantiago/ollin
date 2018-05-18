@@ -7,6 +7,7 @@ respect to several sources:
     biological data.
     2. Occupancy information provided by the article TODO.
 """
+# pylint: disable=F405
 from __future__ import print_function
 
 from functools import partial
@@ -17,9 +18,8 @@ from tqdm import tqdm
 from movement import MovementData, home_range_to_velocity
 import home_range
 import occupancy
-from species_data import SPECIES, COMMON_SPECIES
-from constants import (BETA, DT, RANGE, SEASON, MIN_VELOCITY, OMEGA,
-                       KAPPA)
+from species_data import DATA
+from constants import *
 
 """
 So far simulation depends of the following parameters:
@@ -41,43 +41,61 @@ So far simulation depends of the following parameters:
     8. DT: Number of days to be used in the home range calculation.
 """
 
+
 # Home range MSE
-
-
-def calculate_home_range_distribution(hrange, parameters=None):
+def calculate_home_range_distribution_0(hrange, occup, parameters=None):
     if parameters is None:
         parameters = {}
 
     beta = parameters.get('beta', BETA)
-    range = parameters.get('range', RANGE)
+    range_ = parameters.get('range', RANGE)
+    power = parameters.get('power', POWER)
     dt = parameters.get('dt', DT)
-    n_trials = parameters.get('n_trials', 1000)
-    occup = parameters.get('occupancy', 1)
+    n_individuals = parameters.get('n_individuals', 100)
 
     # Velocity is a function of home_range and dt
-    velocity = home_range_to_velocity(hrange, beta=beta, dt=dt)
-    dx = max(velocity, 0.01)
+    velocity = home_range_to_velocity(hrange, beta=beta, dt=dt, power=power)
 
     movement_data = MovementData(
-        occup,
         velocity,
-        num=n_trials,
+        occup,
+        num=n_individuals,
         steps=dt,
-        range=range)
+        range=range_)
 
     grid = home_range.make_grid(movement_data)
-    areas = np.sum(grid, axis=(1, 2)) * dx**2
+    areas = np.sum(grid, axis=(1, 2))
     return areas
+
+
+def calculate_home_range_distribution(hrange, occup, parameters=None):
+    if parameters is None:
+        parameters = {}
+
+    n_trials = parameters.get('n_trials', 10)
+
+    p = Pool()
+    data = p.map(
+        partial(
+            calculate_home_range_distribution_0,
+            occup=occup,
+            parameters=parameters),
+        [hrange for _ in xrange(n_trials)])
+    p.close()
+    p.join()
+    return np.concatenate(data, 0)
 
 
 def calculate_single_mse_home_range(
         hrange,
+        occup,
         parameters=None,
         normalized=True):
     """calculate Mean Square Error of estimated home range vs given
     """
     distribution = calculate_home_range_distribution(
         hrange,
+        occup,
         parameters=parameters)
     if normalized:
         variance = np.var(distribution)
@@ -87,60 +105,93 @@ def calculate_single_mse_home_range(
     return error
 
 
-def calculate_all_home_range_distributions(species=None, parameters=None):
+def _aux_hr_0(x, parameters=None):
+    if parameters is None:
+        parameters = {}
+    (_, hr), (_, oc), _ = x
+    dist = calculate_home_range_distribution_0(
+        hr, oc, parameters=parameters)
+    return dist
+
+
+def calculate_all_home_range_distributions(parameters=None):
     """Calculates distribution of simulated home range for all species
+    """
+    if parameters is None:
+        parameters = {}
 
-    Species simulated are contained in the SPECIES dictionary"""
-    if species is None:
-        species = SPECIES.keys()
+    n_home_range = parameters.get('n_home_range', N_HOME_RANGE)
+    n_occupancy = parameters.get('n_occupancy', N_OCCUPANCY)
 
-    home_ranges = [SPECIES[spec]['home_range'] for spec in species]
+    min_home_range = parameters.get('min_home_range', MIN_HOME_RANGE)
+    max_home_range = parameters.get('max_home_range', MAX_HOME_RANGE)
+    min_occupancy = parameters.get('min_occupancy', MIN_OCCUPANCY)
+    max_occupancy = parameters.get('max_occupancy', MAX_OCCUPANCY)
 
-    p_pool = Pool()
-    errors = p_pool.map(
-        partial(calculate_home_range_distribution, parameters=parameters),
-        home_ranges)
-    p_pool.close()
-    p_pool.join()
+    home_ranges = np.linspace(
+            min_home_range, max_home_range, n_home_range)
+    occupancies = np.linspace(
+            min_occupancy, max_occupancy, n_occupancy)
 
-    return np.array(errors)
+    n_trials = parameters.get('n_trials', N_TRIALS)
+    n_individuals = parameters.get('n_individuals', N_INDIVIDUALS)
+
+    all_args = [
+            (hr, oc, k)
+            for hr in enumerate(home_ranges)
+            for oc in enumerate(occupancies)
+            for k in xrange(n_trials)]
+
+    p = Pool()
+    results = p.map(partial(_aux_hr_0, parameters=parameters), all_args)
+    p.close()
+    p.join()
+
+    fresults = np.zeros(
+        [n_home_range, n_occupancy, n_trials, n_individuals])
+
+    for ((ihr, _), (ioc, _), k), res in zip(all_args, results):
+        fresults[ihr, ioc, k, :] = res
 
 
-def calculate_all_mse_home_range(species=None, parameters=None):
+    # results = np.array(results).reshape([
+        # n_home_range,
+        # n_occupancy,
+        # n_trials,
+        # n_individuals])
+
+    return home_ranges, occupancies, fresults
+
+
+def calculate_all_mse_home_range(parameters=None):
     """Calculates Mean Square Error average on all species.
 
     Uses the information stored in the SPECIES dictionary.
     """
+    home_ranges, occupancies, areas = calculate_all_home_range_distributions(
+            parameters=parameters)
+    differences = (areas - home_ranges[:, None, None, None])**2
+    errors = np.mean(differences, axis=(1, 2, 3))
+    variances = np.maximum(np.var(differences, axis=(1, 2, 3)), 1)
 
-    if species is None:
-        species = SPECIES.keys()
-
-    home_ranges = [SPECIES[spec]['home_range'] for spec in species]
-
-    p_pool = Pool()
-    errors = p_pool.map(
-        partial(calculate_single_mse_home_range, parameters=parameters),
-        home_ranges)
-    p_pool.close()
-    p_pool.join()
-
-    return np.mean(errors)
+    normalized_error = errors / variances
+    return np.mean(normalized_error)
 
 
 def sweep_search_calibration_home_range(
-        alpha_range=[1.1, 1.9],
-        beta_range=[30, 60],
+        power_range=[0.3, 0.6],
+        beta_range=[40, 80],
         resolution=10,
         range=RANGE):
-    alpha_range = np.linspace(alpha_range[0], alpha_range[1], resolution)
+    power_range = np.linspace(power_range[0], power_range[1], resolution)
     beta_range = np.linspace(beta_range[0], beta_range[1], resolution)
 
-    mini = 9999
+    mini = 9999999
     amin = 0
     bmin = 0
 
     arguments = [
-        (i, j, {'alpha': alpha_range[i], 'beta': beta_range[j]})
+        (i, j, {'power': power_range[i], 'beta': beta_range[j]})
         for i in xrange(resolution) for j in xrange(resolution)
     ]
     result = np.zeros([resolution, resolution])
@@ -151,17 +202,18 @@ def sweep_search_calibration_home_range(
 
         if err < mini:
             mini = err
-            amin = alpha_range[i]
+            amin = power_range[i]
             bmin = beta_range[j]
 
     return result, mini, amin, bmin
 
 
 def binary_search_calibration_home_range(
-        alpha_range=[1.1, 1.9],
-        beta_range=[30, 60],
+        power_range=[0.3, 0.6],
+        beta_range=[40, 80],
         max_depth=5,
         range=RANGE):
+
     for num_step in xrange(max_depth):
         print('Step {}/{} of calibration process'.format(
             num_step + 1,
@@ -169,41 +221,41 @@ def binary_search_calibration_home_range(
         mini = 9999
         aindex = 0
         bindex = 0
-        for nalpha in xrange(2):
+        for npower in xrange(2):
             for nbeta in xrange(2):
-                alpha = alpha_range[nalpha]
+                power = power_range[npower]
                 beta = beta_range[nbeta]
                 msg = '\t---- STEP {}-{}----'
-                msg = msg.format(num_step + 1, 2 * nalpha + nbeta + 1)
+                msg = msg.format(num_step + 1, 2 * npower + nbeta + 1)
                 print(msg)
-                msg = '\t[+] Calculating MSE for alpha={:2.3f} '
+                msg = '\t[+] Calculating MSE for power={:2.3f} '
                 msg += 'and beta={:2.3f}'
-                msg = msg.format(alpha, beta)
+                msg = msg.format(power, beta)
                 print(msg)
                 error = calculate_all_mse_home_range(
-                    parameters={'range': range, 'alpha': alpha, 'beta': beta})
+                    parameters={'range': range, 'power': power, 'beta': beta})
                 if error < mini:
-                    aindex = nalpha
+                    aindex = npower
                     bindex = nbeta
                     mini = error
         print('Minimum error at step {} is {:2.3f}'.format(num_step + 1, mini))
 
-        malpha = (alpha_range[0] + alpha_range[1]) / 2.0
+        mpower = (power_range[0] + power_range[1]) / 2.0
         mbeta = (beta_range[0] + beta_range[1]) / 2.0
 
         if aindex == 0:
-            alpha_range = [alpha_range[0], malpha]
+            power_range = [power_range[0], mpower]
         else:
-            alpha_range = [malpha, alpha_range[1]]
+            power_range = [mpower, power_range[1]]
 
         if bindex == 0:
             beta_range = [beta_range[0], mbeta]
         else:
             beta_range = [mbeta, beta_range[1]]
 
-        print('New alpha range: {}'.format(alpha_range))
+        print('New power range: {}'.format(power_range))
         print('New beta range: {}'.format(beta_range))
-    return alpha_range, beta_range
+    return power_range, beta_range
 
 
 # Occupancy MSE
@@ -211,17 +263,20 @@ def calculate_occupancy_distribution(home_range, occup, parameters=None):
     if parameters is None:
         parameters = {}
 
-    alpha = parameters.get('alpha', ALPHA)
+    # Movement parameters
     beta = parameters.get('beta', BETA)
-    gamma = parameters.get('gamma', GAMMA)
-    delta = parameters.get('delta', DELTA)
     range = parameters.get('range', RANGE)
-    omega = parameters.get('omega', OMEGA)
-    kappa = parameters.get('kappa', KAPPA)
     dt = parameters.get('dt', DT)
+
+    # Occupancy parameters
     season = parameters.get('season', SEASON)
+    gamma = parameters.get('gamma', GAMMA)
+    omega = parameters.get('omega', OMEGA)
+
+    # Statistical parameters
     n_trials = parameters.get('n_trials', 1000)
-    num = int(omega * (occup ** kappa) * range ** 2 / home_range)
+
+    num = range**2 * occupancy.occupancy_to_density(occup, home_range, gamma=gamma, omega=omega)
 
     # Velocity is a function of home_range and dt
     velocity = movement.home_range_to_velocity(home_range, beta=beta, dt=dt)

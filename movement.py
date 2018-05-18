@@ -4,18 +4,14 @@ Movement of individuals is assumed to happen in a square space.
 TODO docstring
 """
 import numpy as np  # pylint: disable=import-error
-from scipy.stats import gaussian_kde  # pylint: disable=import-error
-from tqdm import tqdm  # pylint: disable=import-error
-
+from cycler import cycler  # pylint: disable=import-error
 
 from initial_conditions import InitialCondition, PLOT_OPTIONS
-from constants import (MAX_INDIVIDUALS, RANGE, ALPHA, BETA,
-                       STEPS, DT, MIN_VELOCITY, MAX_POINTS,
-                       GAMMA, DELTA)
+from constants import (RANGE, BETA, STEPS, DT, POWER)
 
 
 class MovementData(object):
-    def __init__(self, velocity, occupancy, num=100, steps=3650, range=RANGE):
+    def __init__(self, velocity, occupancy, num=100, steps=STEPS, range=RANGE):
         self.velocity = velocity
         self.num = num
         self.steps = steps
@@ -29,7 +25,14 @@ class MovementData(object):
     def make_data(self):
         return make_data(self.initial_data, self.steps)
 
-    def plot(self, include=None, num=10, steps=365, axis=None):
+    def plot(
+            self,
+            include=None,
+            num=10,
+            steps=365,
+            axis=None,
+            cmap='Dark2',
+            **kwargs):
         import matplotlib.pyplot as plt  # pylint: disable=import-error
         if include is None:
             include = [
@@ -48,9 +51,14 @@ class MovementData(object):
 
         if len(initial_conditions_options) != 0:
             axis = self.initial_data.plot(
-                include=initial_conditions_options, axis=axis)
+                include=initial_conditions_options, axis=axis, **kwargs)
 
         if 'trajectories' in include:
+
+            cmap = plt.get_cmap(cmap)
+            colors = [cmap(i) for i in np.linspace(0.05, .8, 10)]
+            axis.set_prop_cycle(cycler('color', colors))
+
             num = min(self.num, num)
             steps = min(self.steps, steps)
             trajectories = self.data[:num, :steps, :]
@@ -88,7 +96,7 @@ def make_data(initial_data, steps):
         xindex, yindex = np.split(indices, 2, -1)
         values = heatmap[xindex, yindex].reshape([num])
 
-        exponents = (1.05 + 0.95*values)
+        exponents = (1.1 + 0.9 * values)
         random_magnitudes = velocity * (exponents - 1) / (np.power(
             (1 - np.random.rand(num)), 1/exponents) * exponents)
         random_directions *= random_magnitudes[:, None]
@@ -104,5 +112,5 @@ def make_data(initial_data, steps):
     return np.stack(stack, 1)
 
 
-def home_range_to_velocity(home_range, beta=BETA, dt=DT):
-    return beta * np.sqrt(home_range) / float(dt)
+def home_range_to_velocity(home_range, beta=BETA, power=POWER, dt=DT):
+    return beta * np.power(home_range, power) / float(dt)

@@ -2,7 +2,7 @@ import numpy as np  # pylint: disable=import-error
 from scipy.stats import gaussian_kde  # pylint: disable=import-error
 
 from constants import (MIN_CLUSTERS, MAX_CLUSTERS, MIN_NEIGHBORS,
-                       MAX_NEIGHBORS, MIN_VELOCITY)
+                       MAX_NEIGHBORS, MIN_VELOCITY, MAX_ITERS)
 
 
 PLOT_OPTIONS = [
@@ -37,7 +37,7 @@ class InitialCondition(object):
             np.minimum(initial_points, self.range - 0.01), 0.01)
         return initial_points.T
 
-    def plot(self, include=None, axis=None):
+    def plot(self, include=None, axis=None, transpose=False):
         import matplotlib.pyplot as plt  # pylint: disable=import-error
 
         if include is None:
@@ -57,12 +57,14 @@ class InitialCondition(object):
         if 'heatmap' in include or 'niche' in include:
             heatmap = self.kde_approximation
             size = heatmap.shape[0]
+            if transpose:
+                heatmap = heatmap.T
             Xrange, Yrange = np.meshgrid(
                     np.linspace(0, self.range, size),
                     np.linspace(0, self.range, size))
 
-            if 'heatmap' in include:
-                axis.pcolormesh(Xrange, Yrange, heatmap, cmap='Reds')
+        if 'heatmap' in include:
+            axis.pcolormesh(Xrange, Yrange, heatmap, cmap='Reds')
 
         if 'niche' in include:
             zone = occupation_space_from_approximation(heatmap)
@@ -75,6 +77,9 @@ class InitialCondition(object):
         if 'initial_positions' in include:
             X, Y = zip(*self.initial_points)
             axis.scatter(X, Y, label='initial_positions', c='black', s=2)
+
+        axis.set_xticks(np.linspace(0, self.range, 2))
+        axis.set_yticks(np.linspace(0, self.range, 2))
 
         axis.set_xlim(0, self.range)
         axis.set_ylim(0, self.range)
@@ -127,6 +132,7 @@ def make_kde(points, t_occupancy, resolution=1.0, epsilon=0.05):
 
     kde = gaussian_kde(points['points'], mid_bw)
 
+    counter = 0
     while True:
         occ, kde_approx = calculate_occupancy(
             kde, points['range'], resolution=resolution)
@@ -142,6 +148,10 @@ def make_kde(points, t_occupancy, resolution=1.0, epsilon=0.05):
             max_bw = mid_bw
             mid_bw = (max_bw + min_bw) / 2
             kde.set_bandwidth(mid_bw)
+
+        counter += 1
+        if counter == MAX_ITERS:
+            break
 
     return kde, kde_approx
 

@@ -1,6 +1,55 @@
 import numpy as np  # pylint: disable=import-error
 
-from constants import MIN_VELOCITY
+from constants import MIN_VELOCITY, GAMMA, OMEGA
+
+
+class Occupancy(object):
+    def __init__(self, movement_data, num_trials=1):
+        self.movement_data = movement_data
+        self.num_trials = num_trials
+
+        self.grid = make_grid(self.movement_data, num_trials=num_trials)
+        self.occupations = np.mean(self.grid, (1, 2))
+        self.mean_occupation = np.mean(self.occupations)
+
+    def plot(
+            self,
+            include=None,
+            axis=None,
+            show=0,
+            lev=0.5,
+            transpose=False,
+            **kwargs):
+        import matplotlib.pyplot as plt  # pylint: disable=import-error
+        if axis is None:
+            fig, axis = plt.subplots()
+
+        if include is None:
+            include = [
+                'rectangle', 'niche', 'occupation', 'occupation_contour']
+
+        self.movement_data.plot(
+            include, axis=axis, transpose=transpose, **kwargs)
+
+        if 'occupation' in include:
+            if isinstance(show, int):
+                grid = self.grid[show]
+            elif show == 'mean':
+                grid = np.mean(self.grid, axis=0)
+
+            init_cond = self.movement_data.initial_data
+            size = init_cond.kde_approximation.shape[0]-1
+            range_ = self.movement_data.range
+            xcoord, ycoord = np.meshgrid(
+                np.linspace(0, range_, size),
+                np.linspace(0, range_, size))
+            axis.pcolormesh(xcoord, ycoord, grid, cmap='Blues', alpha=0.2)
+
+            if 'occupation_contour' in include:
+                mask = (grid >= lev)
+                axis.contour(xcoord, ycoord, mask, levels=[0.5], cmap='Blues')
+
+        return axis
 
 
 def make_grid(movement_data, num_trials=1):
@@ -23,6 +72,11 @@ def make_grid(movement_data, num_trials=1):
     space[xcoords, ycoords, zcoords] = 1
 
     return space
+
+
+def occupancy_to_density(occupancy, home_range, gamma=GAMMA, omega=OMEGA):
+    density = GAMMA * (occupancy**OMEGA) / home_range
+    return density
 
 
 def plot(grid, t=0, transpose=True):
