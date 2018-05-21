@@ -12,7 +12,6 @@ from __future__ import print_function
 from functools import partial
 from multiprocessing import Pool
 import numpy as np  # pylint: disable=import-error
-from tqdm import tqdm
 
 import movement
 import home_range
@@ -218,9 +217,8 @@ def calculate_occupancy_distribution(home_range, occup, parameters=None):
     results = pool.map(
         partial(calculate_occupancy_distribution_0,
                 home_range=home_range,
-                occup=occup,
                 parameters=parameters),
-        xrange(n_worlds))
+        [occup for _ in xrange(n_worlds)])
     pool.close()
     pool.join()
 
@@ -260,4 +258,3 @@ def calculate_all_occupancy_distributions(parameters=None):
     p.join()
 
     return home_ranges, occupancies, results
-
