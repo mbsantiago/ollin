@@ -154,7 +154,7 @@ def calculate_all_home_range_distributions(parameters=None):
     return home_ranges, occupancies, fresults
 
 
-def calculate_occupancy_distribution_0(home_range, occup, parameters=None):
+def calculate_occupancy_distribution_0(hrange, occup, parameters=None):
     if parameters is None:
         parameters = {}
 
@@ -173,14 +173,14 @@ def calculate_occupancy_distribution_0(home_range, occup, parameters=None):
     n_trials = parameters.get('n_trials', 100)
 
     velocity = movement.home_range_to_velocity(
-        home_range,
+        hrange,
         beta=beta,
         power=power,
         dt=dt)
 
     num = occupancy.occupancy_to_density(
         occup,
-        home_range,
+        hrange,
         gamma=gamma,
         omega=omega) * range_**2
 
@@ -199,15 +199,15 @@ def calculate_occupancy_distribution_0(home_range, occup, parameters=None):
 
 
 def aux_occ_0(args, parameters=None):
-    home_range, occup = args
+    hrange, occup = args
     results = calculate_occupancy_distribution_0(
-        home_range.
+        hrange.
         occup,
         parameters=parameters)
     return results
 
 
-def calculate_occupancy_distribution(home_range, occup, parameters=None):
+def calculate_occupancy_distribution(hrange, occup, parameters=None):
     if parameters is None:
         parameters = {}
 
@@ -218,7 +218,7 @@ def calculate_occupancy_distribution(home_range, occup, parameters=None):
         partial(calculate_occupancy_distribution_0,
                 occup=occup,
                 parameters=parameters),
-        [home_range for _ in xrange(n_worlds)])
+        [hrange for _ in xrange(n_worlds)])
     pool.close()
     pool.join()
 
