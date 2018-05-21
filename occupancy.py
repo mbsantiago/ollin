@@ -68,10 +68,16 @@ def make_grid(movement_data, num_trials=1):
         0, num_trials,
         runs * steps,
         endpoint=False).astype(np.int).reshape([-1, 1])
-    ycoords, zcoords = np.split(indices.reshape([-1, 2]), 2, -1)
+    ycoords, zcoords = np.split(
+        indices.reshape([-1, 2]), 2, -1)  # pylint: disable=unbalanced-tuple-unpacking  noqa
     space[xcoords, ycoords, zcoords] = 1
 
     return space
+
+
+def make_data(movement_data, num_trials=1):
+    data = Occupancy(movement_data, num_trials=num_trials)
+    return data
 
 
 def occupancy_to_density(occupancy, home_range, gamma=GAMMA, omega=OMEGA):
