@@ -216,9 +216,9 @@ def calculate_occupancy_distribution(home_range, occup, parameters=None):
     pool = Pool()
     results = pool.map(
         partial(calculate_occupancy_distribution_0,
-                home_range=home_range,
+                occup=occup,
                 parameters=parameters),
-        [occup for _ in xrange(n_worlds)])
+        [home_range for _ in xrange(n_worlds)])
     pool.close()
     pool.join()
 
