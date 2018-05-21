@@ -81,7 +81,7 @@ def make_data(movement_data, num_trials=1):
 
 
 def occupancy_to_density(occupancy, home_range, gamma=GAMMA, omega=OMEGA):
-    density = GAMMA * (occupancy**OMEGA) / home_range
+    density = gamma * (occupancy / float(home_range)) ** omega
     return density
 
 

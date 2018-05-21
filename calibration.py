@@ -178,16 +178,16 @@ def calculate_occupancy_distribution_0(hrange, occup, parameters=None):
         power=power,
         dt=dt)
 
-    num = occupancy.occupancy_to_density(
+    num = int(occupancy.occupancy_to_density(
         occup,
         hrange,
         gamma=gamma,
-        omega=omega) * range_**2
+        omega=omega) * range_**2)
 
     movement_data = movement.make_data(
         velocity,
         occup,
-        num=n_trials*num,
+        num=n_trials * num,
         steps=season,
         range=range_)
 
@@ -198,12 +198,14 @@ def calculate_occupancy_distribution_0(hrange, occup, parameters=None):
     return occupancy_data.occupations
 
 
-def aux_occ_0(args, parameters=None):
-    hrange, occup = args
+def _aux_occ_0(args, parameters=None):
+    (i, hrange), (j, occup), k = args
+    # print('[+] Starting {}-th calculation of occupancy for {}-th home_range={}, {}-th occupancy={}'.format(k, i, hrange, j, occup))
     results = calculate_occupancy_distribution_0(
-        hrange.
+        hrange,
         occup,
         parameters=parameters)
+    # print('[!!!] Done {}-th calculation of occupancy for {}-th home_range={}, {}-th occupancy={}'.format(k, i, hrange, j, occup))
     return results
 
 
@@ -213,14 +215,16 @@ def calculate_occupancy_distribution(hrange, occup, parameters=None):
 
     n_worlds = parameters.get('n_worlds', 10)
 
-    pool = Pool()
-    results = pool.map(
+    arguments = [hrange for _ in xrange(n_worlds)]
+
+    p = Pool()
+    results = p.map(
         partial(calculate_occupancy_distribution_0,
                 occup=occup,
                 parameters=parameters),
-        [hrange for _ in xrange(n_worlds)])
-    pool.close()
-    pool.join()
+        arguments)
+    p.close()
+    p.join()
 
     return np.concatenate(results, 0)
 
@@ -244,17 +248,17 @@ def calculate_all_occupancy_distributions(parameters=None):
     occupancies = np.linspace(
             min_occupancy, max_occupancy, n_occupancy)
 
-    n_trials = parameters.get('n_trials', N_TRIALS)  # noqa: F405
+    n_worlds = parameters.get('n_worlds', N_WORLDS)  # noqa: F405
 
     all_args = [
             (hr, oc, k)
             for hr in enumerate(home_ranges)
             for oc in enumerate(occupancies)
-            for k in xrange(n_trials)]
+            for k in xrange(n_worlds)]
 
     p = Pool()
-    results = p.map(partial(_aux_hr_0, parameters=parameters), all_args)
+    results = p.map(partial(_aux_occ_0, parameters=parameters), all_args)
     p.close()
     p.join()
 
-    return home_ranges, occupancies, results
+    return results, all_args
