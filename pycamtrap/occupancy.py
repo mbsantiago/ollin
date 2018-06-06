@@ -1,6 +1,7 @@
 import numpy as np  # pylint: disable=import-error
 
-from constants import MIN_VELOCITY, GAMMA, OMEGA
+from constants import MIN_VELOCITY, GAMMA, OMEGA, RANGE
+from numba import jit, float64, int64
 
 
 class Occupancy(object):
@@ -80,8 +81,8 @@ def make_data(movement_data, num_trials=1):
     return data
 
 
-def occupancy_to_density(occupancy, home_range, gamma=GAMMA, omega=OMEGA):
-    density = gamma * (occupancy / float(home_range)) ** omega
+def occupancy_to_num(occupancy, home_range, gamma=GAMMA, omega=OMEGA, range=RANGE):
+    density = gamma * (occupancy * range / float(home_range)) ** omega
     return density
 
 

@@ -5,21 +5,72 @@ TODO docstring
 """
 # pylint: disable=unbalanced-tuple-unpacking
 import numpy as np  # pylint: disable=import-error
+from numba import jit, float64, int64
+import math
 from cycler import cycler  # pylint: disable=import-error
 
 import initial_conditions
 from constants import (RANGE, BETA, STEPS, DT, POWER)
 
 
-class MovementData(object):
-    def __init__(self, velocity, occupancy, num=100, steps=STEPS, range=RANGE):
-        self.velocity = velocity
-        self.num = num
-        self.steps = steps
-        self.range = range
+@jit(
+    float64[:, :, :](
+        float64[:, :],
+        float64[:, :],
+        float64,
+        int64,
+        float64,
+        float64,
+        int64),
+    nopython=True)
+def _movement(
+        heatmap,
+        random_positions,
+        resolution,
+        num,
+        velocity,
+        range_,
+        steps):
+    movement = np.zeros((num, steps, 2), dtype=float64)
+    random_angles = np.random.uniform(0.0, 2 * np.pi, size=(steps, num))
 
-        self.initial_data = initial_conditions.make_data(
-            range, occupancy, self.num, self.velocity)
+    for k in xrange(steps):
+        movement[:, k, :] = random_positions
+        for j in xrange(num):
+            angle = random_angles[k, j]
+            heading = (math.cos(angle), math.sin(angle))
+            index = (
+                random_positions[j, 0] // resolution,
+                random_positions[j, 1] // resolution)
+            value = heatmap[int(index[0]), int(index[1])]
+            exponent = 1.1 + 0.9 * value
+            magnitude = (velocity * (exponent - 1)) / \
+                (math.pow((1 - np.random.rand()), 1/exponent) * exponent)
+            direction = (magnitude * heading[0], magnitude * heading[1])
+            tmp1 = (
+                random_positions[j, 0] + direction[0],
+                random_positions[j, 1] + direction[1])
+            tmp2 = (tmp1[0] % (2 * range_), tmp1[1] % (2 * range_))
+
+            if tmp2[0] < range_:
+                random_positions[j, 0] = tmp2[0] % range_
+            else:
+                random_positions[j, 0] = (-tmp2[0]) % range_
+
+            if tmp2[1] < range_:
+                random_positions[j, 1] = tmp2[1] % range_
+            else:
+                random_positions[j, 1] = (-tmp2[1]) % range_
+    return movement
+
+
+class MovementData(object):
+    def __init__(self, initial_data, steps=STEPS):
+        self.initial_data = initial_data
+        self.velocity = initial_data.velocity
+        self.num = initial_data.num
+        self.range = initial_data.range
+        self.steps = steps
 
         self.data = self.make_data()
 
@@ -37,31 +88,17 @@ class MovementData(object):
         num = initial_data.num
         velocity = initial_data.velocity
         range_ = initial_data.range
-        stack = [random_positions]
-        for _ in xrange(steps - 1):
-            random_angles = np.random.uniform(0, 2 * np.pi, [num])
-            random_directions = np.stack(
-                    [np.cos(random_angles), np.sin(random_angles)], axis=-1)
 
-            indices = np.floor_divide(
-                random_positions, resolution).astype(np.int)
-            xindex, yindex = np.split(indices, 2, -1)
-            values = heatmap[xindex, yindex].reshape([num])
+        mov = _movement(
+            heatmap,
+            random_positions,
+            resolution,
+            num,
+            velocity,
+            range_,
+            steps)
 
-            exponents = (1.1 + 0.9 * values)
-            random_magnitudes = velocity * (exponents - 1) / (np.power(
-                (1 - np.random.rand(num)), 1/exponents) * exponents)
-            random_directions *= random_magnitudes[:, None]
-
-            tmp1 = random_positions + random_directions
-            tmp2 = np.mod(tmp1, 2 * range_)
-            reflections = np.greater(tmp2, range_)
-            tmp3 = (1 - reflections) * np.mod(tmp2, range_)
-            tmp4 = reflections * np.mod(-tmp2, range_)
-            random_positions = tmp3 + tmp4
-
-            stack.append(random_positions)
-        return np.stack(stack, 1)
+        return mov
 
     def plot(
             self,
@@ -112,9 +149,15 @@ class MovementData(object):
         return axis
 
 
+def make_data_from_init_cond(initial_data, steps=STEPS):
+    mov_data = MovementData(initial_data, steps=steps)
+    return mov_data
+
+
 def make_data(velocity, occupancy, num=100, steps=STEPS, range=RANGE):
-    mov_data = MovementData(
-        velocity, occupancy, num=num, steps=steps, range=range)
+    initial_data = initial_conditions.make_data(
+        range, occupancy, num, velocity)
+    mov_data = MovementData(initial_data, steps=steps)
     return mov_data
 
 
