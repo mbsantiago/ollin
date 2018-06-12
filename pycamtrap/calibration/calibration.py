@@ -13,10 +13,10 @@ from functools import partial
 from multiprocessing import Pool
 import numpy as np  # pylint: disable=import-error
 
-import movement
-import home_range
-import occupancy
-from constants import *  # noqa: F403
+from pycamtrap import movement
+from pycamtrap import home_range
+from pycamtrap import occupancy
+from pycamtrap.core.constants import *  # noqa: F403
 
 """
 So far simulation depends of the following parameters:
@@ -153,7 +153,6 @@ def calculate_all_home_range_distributions(parameters=None):
 
     return home_ranges, occupancies, fresults
 
-
 def calculate_occupancy_distribution_0(hrange, occup, parameters=None):
     if parameters is None:
         parameters = {}
@@ -168,6 +167,7 @@ def calculate_occupancy_distribution_0(hrange, occup, parameters=None):
     season = parameters.get('season', SEASON)  # noqa
     gamma = parameters.get('gamma', GAMMA)  # noqa
     omega = parameters.get('omega', OMEGA)  # noqa
+    tau = parameters.get('tau', TAU)
 
     # Statistical parameters
     n_trials = parameters.get('n_trials', 100)
@@ -178,18 +178,27 @@ def calculate_occupancy_distribution_0(hrange, occup, parameters=None):
         power=power,
         dt=dt)
 
-    num = int(occupancy.occupancy_to_density(
+    num = occupancy.occupancy_to_num(
         occup,
         hrange,
         gamma=gamma,
-        omega=omega) * range_**2)
+        omega=omega,
+        range=range_,
+        tau=tau)
 
-    movement_data = movement.make_data(
-        velocity,
-        occup,
-        num=n_trials * num,
-        steps=season,
-        range=range_)
+    while True:
+        try:
+            movement_data = movement.make_data(
+                velocity,
+                occup,
+                num=n_trials * num,
+                steps=season,
+                range=range_)
+        except:
+            continue
+
+        if not np.isnan(movement_data.data).any():
+            break
 
     occupancy_data = occupancy.make_data(
         movement_data,
@@ -200,12 +209,10 @@ def calculate_occupancy_distribution_0(hrange, occup, parameters=None):
 
 def _aux_occ_0(args, parameters=None):
     (i, hrange), (j, occup), k = args
-    # print('[+] Starting {}-th calculation of occupancy for {}-th home_range={}, {}-th occupancy={}'.format(k, i, hrange, j, occup))
     results = calculate_occupancy_distribution_0(
         hrange,
         occup,
         parameters=parameters)
-    # print('[!!!] Done {}-th calculation of occupancy for {}-th home_range={}, {}-th occupancy={}'.format(k, i, hrange, j, occup))
     return results
 
 

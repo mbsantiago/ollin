@@ -1,6 +1,6 @@
 import numpy as np  # pylint: disable=import-error
 
-from constants import MIN_VELOCITY, GAMMA, OMEGA, RANGE
+from constants import MIN_VELOCITY, GAMMA, OMEGA, RANGE, TAU
 from numba import jit, float64, int64
 
 
@@ -63,7 +63,7 @@ def make_grid(movement_data, num_trials=1):
     steps = array.shape[1]
 
     space = np.zeros([num_trials, num_sides, num_sides])
-    indices = np.true_divide(array, dx).astype(np.int)
+    indices = np.floor_divide(array, dx).astype(np.int)
 
     xcoords = np.linspace(
         0, num_trials,
@@ -81,9 +81,17 @@ def make_data(movement_data, num_trials=1):
     return data
 
 
-def occupancy_to_num(occupancy, home_range, gamma=GAMMA, omega=OMEGA, range=RANGE):
-    density = gamma * (occupancy * range / float(home_range)) ** omega
-    return density
+def _sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
+def occupancy_to_num(occupancy, home_range, gamma=GAMMA, omega=OMEGA, range=RANGE, tau=TAU):
+    # k = tau / home_range
+    # density = k * gamma * ((1 - occupancy)**(-k) - 1)**(1/omega)
+    # num = density * range**2
+    overlap = _sigmoid(tau / home_range)
+    num = gamma * (occupancy * range**2 / ((1 - overlap) * home_range))**omega
+    return int(num)
 
 
 def plot(grid, t=0, transpose=True):
