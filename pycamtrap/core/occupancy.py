@@ -86,11 +86,7 @@ def _sigmoid(x):
 
 
 def occupancy_to_num(occupancy, home_range, gamma=GAMMA, omega=OMEGA, range=RANGE, tau=TAU):
-    # k = tau / home_range
-    # density = k * gamma * ((1 - occupancy)**(-k) - 1)**(1/omega)
-    # num = density * range**2
-    overlap = _sigmoid(tau / home_range)
-    num = gamma * (occupancy * range**2 / ((1 - overlap) * home_range))**omega
+    num = gamma * (occupancy**tau) * range**2 / (home_range)**omega
     return int(num)
 
 
