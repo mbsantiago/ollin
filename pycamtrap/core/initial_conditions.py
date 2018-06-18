@@ -1,6 +1,7 @@
 import numpy as np  # pylint: disable=import-error
 from scipy.stats import gaussian_kde  # pylint: disable=import-error
 
+from movement import home_range_to_velocity
 from constants import (MIN_CLUSTERS, MAX_CLUSTERS, MIN_NEIGHBORS,
                        MAX_NEIGHBORS, MIN_VELOCITY, MAX_ITERS)
 
@@ -12,13 +13,13 @@ PLOT_OPTIONS = [
 
 
 class InitialCondition(object):
-    def __init__(self, range, occupancy, num, velocity):
+    def __init__(self, range, occupancy, num, home_range):
         self.range = range
         self.occupancy = occupancy
         self.num = num
-        self.velocity = velocity
-
-        self.resolution = max(self.velocity, MIN_VELOCITY)
+        self.home_range = home_range
+        self.velocity = home_range_to_velocity(home_range)
+        self.resolution = home_range_to_resolution(home_range)
 
         self.kde_points = self.make_cluster_points()
         self.kde, self.kde_approximation = self.make_kde()
@@ -167,3 +168,6 @@ def calculate_occupancy(density, range, resolution=1.0):
 def make_data(range, occupancy, num, velocity):
     initial_data = InitialCondition(range, occupancy, num, velocity)
     return initial_data
+
+def home_range_to_resolution(home_range):
+    return np.sqrt(home_range)

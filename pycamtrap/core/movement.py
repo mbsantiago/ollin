@@ -36,6 +36,7 @@ def _movement(
     steps = days * steps_per_day
     movement = np.zeros((num, steps, 2), dtype=float64)
     random_angles = np.random.uniform(0.0, 2 * np.pi, size=(steps, num))
+    velocity = velocity / float(steps_per_day)
 
     for k in xrange(steps):
         movement[:, k, :] = random_positions
@@ -169,8 +170,8 @@ def make_data(velocity, occupancy, num=100, days=DAYS, steps_per_day=STEPS_PER_D
 
 
 def home_range_to_velocity(home_range, beta=BETA, power=POWER, dt=DT, steps_per_day=STEPS_PER_DAY):
-    return beta * np.power(home_range, power) / float(dt * steps_per_day)
+    return beta * np.power(home_range, power) / float(dt)
 
 
 def velocity_to_home_range(velocity, beta=BETA, power=POWER, dt=DT, steps_per_day=STEPS_PER_DAY):
-    return np.power(velocity * dt * steps_per_day / beta, 1/power)
+    return np.power(velocity * dt / beta, 1/power)
