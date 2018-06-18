@@ -10,7 +10,7 @@ import math
 from cycler import cycler  # pylint: disable=import-error
 
 import initial_conditions
-from constants import (RANGE, BETA, STEPS, DT, POWER)
+from constants import (RANGE, BETA, DAYS, DT, POWER, STEPS_PER_DAY)
 
 
 @jit(
@@ -21,6 +21,7 @@ from constants import (RANGE, BETA, STEPS, DT, POWER)
         int64,
         float64,
         float64,
+        int64,
         int64),
     nopython=True)
 def _movement(
@@ -30,7 +31,9 @@ def _movement(
         num,
         velocity,
         range_,
-        steps):
+        days,
+        steps_per_day):
+    steps = days * steps_per_day
     movement = np.zeros((num, steps, 2), dtype=float64)
     random_angles = np.random.uniform(0.0, 2 * np.pi, size=(steps, num))
 
@@ -65,19 +68,22 @@ def _movement(
 
 
 class MovementData(object):
-    def __init__(self, initial_data, steps=STEPS):
+    def __init__(self, initial_data, days=DAYS, steps_per_day=STEPS_PER_DAY):
         self.initial_data = initial_data
         self.velocity = initial_data.velocity
         self.num = initial_data.num
         self.range = initial_data.range
-        self.steps = steps
+        self.days = days
+        self.steps_per_day = steps_per_day
+        self.steps = days * steps_per_day
 
         self.data = self.make_data()
 
     def make_data(self):
         """Main function for movement data creation."""
         initial_data = self.initial_data
-        steps = self.steps
+        days= self.days
+        steps_per_day = self.steps_per_day
 
         random_positions = initial_data.initial_points
 
@@ -96,7 +102,8 @@ class MovementData(object):
             num,
             velocity,
             range_,
-            steps)
+            days,
+            steps_per_day)
 
         return mov
 
@@ -104,8 +111,8 @@ class MovementData(object):
             self,
             include=None,
             num=10,
-            steps=365,
-            axis=None,
+            days=365,
+            ax=None,
             cmap='Dark2',
             **kwargs):
         import matplotlib.pyplot as plt  # pylint: disable=import-error
@@ -117,49 +124,53 @@ class MovementData(object):
                 'rectangle',
                 'trajectories']
 
-        if axis is None:
-            fig, axis = plt.subplots()
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(10, 10))
 
         initial_conditions_options = [
             opt for opt in include
             if opt in initial_conditions.PLOT_OPTIONS]
 
         if len(initial_conditions_options) != 0:
-            axis = self.initial_data.plot(
-                include=initial_conditions_options, axis=axis, **kwargs)
+            ax = self.initial_data.plot(
+                include=initial_conditions_options, ax=ax, **kwargs)
 
         if 'trajectories' in include:
 
             cmap = plt.get_cmap(cmap)
             colors = [cmap(i) for i in np.linspace(0.05, .8, 10)]
-            axis.set_prop_cycle(cycler('color', colors))
+            ax.set_prop_cycle(cycler('color', colors))
 
             num = min(self.num, num)
-            steps = min(self.steps, steps)
+            steps = min(self.steps, days * self.steps_per_day)
             trajectories = self.data[:num, :steps, :]
 
             for trajectory in trajectories:
                 xcoord, ycoord = zip(*trajectory)
-                axis.plot(xcoord, ycoord)
+                ax.plot(xcoord, ycoord)
 
         ticks = np.linspace(0, self.range, 2)
-        axis.set_xticks(ticks)
-        axis.set_yticks(ticks)
+        ax.set_xticks(ticks)
+        ax.set_yticks(ticks)
 
-        return axis
+        return ax
 
 
-def make_data_from_init_cond(initial_data, steps=STEPS):
-    mov_data = MovementData(initial_data, steps=steps)
+def make_data_from_init_cond(initial_data, days=DAYS, steps_per_day=STEPS_PER_DAY):
+    mov_data = MovementData(initial_data, days=days, steps_per_day=steps_per_day)
     return mov_data
 
 
-def make_data(velocity, occupancy, num=100, steps=STEPS, range=RANGE):
+def make_data(velocity, occupancy, num=100, days=DAYS, steps_per_day=STEPS_PER_DAY, range=RANGE):
     initial_data = initial_conditions.make_data(
         range, occupancy, num, velocity)
-    mov_data = MovementData(initial_data, steps=steps)
+    mov_data = MovementData(initial_data, days=days, steps_per_day=steps_per_day)
     return mov_data
 
 
-def home_range_to_velocity(home_range, beta=BETA, power=POWER, dt=DT):
-    return beta * np.power(home_range, power) / float(dt)
+def home_range_to_velocity(home_range, beta=BETA, power=POWER, dt=DT, steps_per_day=STEPS_PER_DAY):
+    return beta * np.power(home_range, power) / float(dt * steps_per_day)
+
+
+def velocity_to_home_range(velocity, beta=BETA, power=POWER, dt=DT, steps_per_day=STEPS_PER_DAY):
+    return np.power(velocity * dt * steps_per_day / beta, 1/power)

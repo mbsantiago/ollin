@@ -37,7 +37,7 @@ class InitialCondition(object):
             np.minimum(initial_points, self.range - 0.01), 0.01)
         return initial_points.T
 
-    def plot(self, include=None, axis=None, transpose=False):
+    def plot(self, include=None, ax=None, transpose=False):
         import matplotlib.pyplot as plt  # pylint: disable=import-error
 
         if include is None:
@@ -47,12 +47,12 @@ class InitialCondition(object):
                     'niche',
                     'rectangle']
 
-        if axis is None:
-            fig, axis = plt.subplots()
+        if ax is None:
+            fig, ax = plt.subplots()
 
         if 'rectangle' in include:
             rect = plt.Rectangle([0, 0], self.range, self.range, fill=False)
-            axis.add_patch(rect)
+            ax.add_patch(rect)
 
         if 'heatmap' in include or 'niche' in include:
             heatmap = self.kde_approximation
@@ -64,27 +64,27 @@ class InitialCondition(object):
                     np.linspace(0, self.range, size))
 
         if 'heatmap' in include:
-            axis.pcolormesh(Xrange, Yrange, heatmap, cmap='Reds')
+            ax.pcolormesh(Xrange, Yrange, heatmap, cmap='Reds')
 
         if 'niche' in include:
             zone = occupation_space_from_approximation(heatmap)
-            axis.contour(Xrange, Yrange, zone, levels=0.5)
+            ax.contour(Xrange, Yrange, zone, levels=0.5)
 
         if 'kde_points' in include:
             X, Y = zip(*self.kde_points.T)
-            axis.scatter(X, Y, label='KDE Points')
+            ax.scatter(X, Y, label='KDE Points')
 
         if 'initial_positions' in include:
             X, Y = zip(*self.initial_points)
-            axis.scatter(X, Y, label='initial_positions', c='black', s=2)
+            ax.scatter(X, Y, label='initial_positions', c='black', s=2)
 
-        axis.set_xticks(np.linspace(0, self.range, 2))
-        axis.set_yticks(np.linspace(0, self.range, 2))
+        ax.set_xticks(np.linspace(0, self.range, 2))
+        ax.set_yticks(np.linspace(0, self.range, 2))
 
-        axis.set_xlim(0, self.range)
-        axis.set_ylim(0, self.range)
+        ax.set_xlim(0, self.range)
+        ax.set_ylim(0, self.range)
 
-        return axis
+        return ax
 
 
 def make_cluster_points(range):
