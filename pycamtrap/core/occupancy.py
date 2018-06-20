@@ -3,7 +3,7 @@ import numpy as np  # pylint: disable=import-error
 from constants import GAMMA, OMEGA, RANGE, TAU
 from numba import jit, float64, int64
 
-from movement import velocity_to_home_range
+from utils import velocity_to_home_range, velocity_to_resolution
 
 
 class Occupancy(object):
@@ -113,10 +113,3 @@ def make_data(movement_data, num_trials=1):
     data = Occupancy(movement_data, num_trials=num_trials)
     return data
 
-
-def occupancy_to_num(occupancy, home_range, gamma=GAMMA, omega=OMEGA, range=RANGE, tau=TAU):
-    num = gamma * (occupancy**tau) * range**2 / (home_range)**omega
-    return int(num)
-
-def velocity_to_resolution(velocity):
-    return np.sqrt(velocity_to_home_range(velocity))

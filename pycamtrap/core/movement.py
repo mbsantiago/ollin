@@ -10,7 +10,9 @@ import math
 from cycler import cycler  # pylint: disable=import-error
 
 import initial_conditions
-from constants import (RANGE, BETA, DAYS, DT, POWER, STEPS_PER_DAY)
+from constants import (RANGE, BETA, DAYS, DT, STEPS_PER_DAY)
+
+from utils import occupancy_to_num
 
 
 @jit(
@@ -69,30 +71,39 @@ def _movement(
 
 
 class MovementData(object):
-    def __init__(self, initial_data, days=DAYS, steps_per_day=STEPS_PER_DAY):
+    def __init__(self, initial_data, num=None, days=DAYS, steps_per_day=STEPS_PER_DAY):
+
         self.initial_data = initial_data
+        self.occupancy = initial_data.occupancy
+        self.home_range = initial_data.home_range
         self.velocity = initial_data.velocity
-        self.num = initial_data.num
         self.range = initial_data.range
+
+        if num is None:
+            num = occupancy_to_num(
+                self.occupancy, self.home_range)
+        self.num = num
         self.days = days
         self.steps_per_day = steps_per_day
         self.steps = days * steps_per_day
+
+        self.initial_positions = initial_data.sample(num)
 
         self.data = self.make_data()
 
     def make_data(self):
         """Main function for movement data creation."""
         initial_data = self.initial_data
-        days= self.days
+        days = self.days
         steps_per_day = self.steps_per_day
 
-        random_positions = initial_data.initial_points
+        random_positions = self.initial_positions
 
         heatmap = initial_data.kde_approximation
         heatmap = heatmap / heatmap.max()
         resolution = initial_data.resolution
 
-        num = initial_data.num
+        num = self.num
         velocity = initial_data.velocity
         range_ = initial_data.range
 
@@ -155,23 +166,3 @@ class MovementData(object):
         ax.set_yticks(ticks)
 
         return ax
-
-
-def make_data_from_init_cond(initial_data, days=DAYS, steps_per_day=STEPS_PER_DAY):
-    mov_data = MovementData(initial_data, days=days, steps_per_day=steps_per_day)
-    return mov_data
-
-
-def make_data(velocity, occupancy, num=100, days=DAYS, steps_per_day=STEPS_PER_DAY, range=RANGE):
-    initial_data = initial_conditions.make_data(
-        range, occupancy, num, velocity)
-    mov_data = MovementData(initial_data, days=days, steps_per_day=steps_per_day)
-    return mov_data
-
-
-def home_range_to_velocity(home_range, beta=BETA, power=POWER, dt=DT, steps_per_day=STEPS_PER_DAY):
-    return beta * np.power(home_range, power) / float(dt)
-
-
-def velocity_to_home_range(velocity, beta=BETA, power=POWER, dt=DT, steps_per_day=STEPS_PER_DAY):
-    return np.power(velocity * dt / beta, 1/power)

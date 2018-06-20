@@ -1,7 +1,7 @@
 import numpy as np  # pylint: disable=import-error
 from scipy.stats import gaussian_kde  # pylint: disable=import-error
 
-from movement import home_range_to_velocity
+from utils import home_range_to_velocity, velocity_to_resolution
 from constants import (MIN_CLUSTERS, MAX_CLUSTERS, MIN_NEIGHBORS,
                        MAX_NEIGHBORS, MIN_VELOCITY, MAX_ITERS)
 
@@ -13,17 +13,16 @@ PLOT_OPTIONS = [
 
 
 class InitialCondition(object):
-    def __init__(self, range, occupancy, num, home_range):
+    def __init__(self, range, occupancy, home_range):
         self.range = range
         self.occupancy = occupancy
-        self.num = num
+
         self.home_range = home_range
         self.velocity = home_range_to_velocity(home_range)
-        self.resolution = home_range_to_resolution(home_range)
+        self.resolution = velocity_to_resolution(self.velocity)
 
         self.kde_points = self.make_cluster_points()
         self.kde, self.kde_approximation = self.make_kde()
-        self.initial_points = self.make_initial_points()
 
     def make_cluster_points(self):
         return make_cluster_points(self.range)
@@ -32,8 +31,8 @@ class InitialCondition(object):
         return make_kde(
             self.kde_points, self.occupancy, resolution=self.resolution)
 
-    def make_initial_points(self):
-        initial_points = self.kde.resample(size=self.num)
+    def sample(self, num):
+        initial_points = self.kde.resample(size=num)
         initial_points = np.maximum(
             np.minimum(initial_points, self.range - 0.01), 0.01)
         return initial_points.T
@@ -44,7 +43,6 @@ class InitialCondition(object):
         if include is None:
             include = [
                     'heatmap',
-                    'initial_positions',
                     'niche',
                     'rectangle']
 
@@ -74,10 +72,6 @@ class InitialCondition(object):
         if 'kde_points' in include:
             X, Y = zip(*self.kde_points.T)
             ax.scatter(X, Y, label='KDE Points')
-
-        if 'initial_positions' in include:
-            X, Y = zip(*self.initial_points)
-            ax.scatter(X, Y, label='initial_positions', c='black', s=2)
 
         ax.set_xticks(np.linspace(0, self.range, 2))
         ax.set_yticks(np.linspace(0, self.range, 2))
@@ -169,5 +163,3 @@ def make_data(range, occupancy, num, velocity):
     initial_data = InitialCondition(range, occupancy, num, velocity)
     return initial_data
 
-def home_range_to_resolution(home_range):
-    return np.sqrt(home_range)
