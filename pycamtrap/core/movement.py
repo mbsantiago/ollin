@@ -4,15 +4,15 @@ Movement of individuals is assumed to happen in a square space.
 TODO docstring
 """
 # pylint: disable=unbalanced-tuple-unpacking
-import numpy as np  # pylint: disable=import-error
-from numba import jit, float64, int64
 import math
+import numpy as np  # pylint: disable=import-error
 from cycler import cycler  # pylint: disable=import-error
+from numba import jit, float64, int64
 
 import initial_conditions
-from constants import (RANGE, BETA, DAYS, DT, STEPS_PER_DAY)
+from constants import handle_parameters
 
-from utils import occupancy_to_num
+from utils import density
 
 
 @jit(
@@ -22,7 +22,7 @@ from utils import occupancy_to_num
         float64,
         int64,
         float64,
-        float64,
+        float64[:],
         int64,
         int64),
     nopython=True)
@@ -39,6 +39,7 @@ def _movement(
     movement = np.zeros((num, steps, 2), dtype=float64)
     random_angles = np.random.uniform(0.0, 2 * np.pi, size=(steps, num))
     velocity = velocity / float(steps_per_day)
+    rangex, rangey = range_
 
     for k in xrange(steps):
         movement[:, k, :] = random_positions
@@ -56,22 +57,27 @@ def _movement(
             tmp1 = (
                 random_positions[j, 0] + direction[0],
                 random_positions[j, 1] + direction[1])
-            tmp2 = (tmp1[0] % (2 * range_), tmp1[1] % (2 * range_))
+            tmp2 = (tmp1[0] % (2 * rangex), tmp1[1] % (2 * rangey))
 
-            if tmp2[0] < range_:
-                random_positions[j, 0] = tmp2[0] % range_
+            if tmp2[0] < rangex:
+                random_positions[j, 0] = tmp2[0] % rangex
             else:
-                random_positions[j, 0] = (-tmp2[0]) % range_
+                random_positions[j, 0] = (-tmp2[0]) % rangex
 
-            if tmp2[1] < range_:
-                random_positions[j, 1] = tmp2[1] % range_
+            if tmp2[1] < rangey:
+                random_positions[j, 1] = tmp2[1] % rangey
             else:
-                random_positions[j, 1] = (-tmp2[1]) % range_
+                random_positions[j, 1] = (-tmp2[1]) % rangey
     return movement
 
 
 class MovementData(object):
-    def __init__(self, initial_data, num=None, days=DAYS, steps_per_day=STEPS_PER_DAY):
+    def __init__(self, initial_data, num=None, days=None, parameters=None):
+        if parameters is None:
+            parameters = initial_data.parameters
+        else:
+            parameters = handle_parameters(parameters)
+        self.parameters = parameters
 
         self.initial_data = initial_data
         self.occupancy = initial_data.occupancy
@@ -80,15 +86,19 @@ class MovementData(object):
         self.range = initial_data.range
 
         if num is None:
-            num = occupancy_to_num(
-                self.occupancy, self.home_range)
+            dens = density(
+                self.occupancy, self.home_range, parameters=self.parameters)
+            num = int(self.range[0] * self.range[1] * dens)
         self.num = num
+
+        if days is None:
+            days = parameters['DAYS']
         self.days = days
-        self.steps_per_day = steps_per_day
-        self.steps = days * steps_per_day
+
+        self.steps_per_day = parameters['STEPS_PER_DAY']
+        self.steps = days * self.steps_per_day
 
         self.initial_positions = initial_data.sample(num)
-
         self.data = self.make_data()
 
     def make_data(self):
@@ -101,7 +111,7 @@ class MovementData(object):
 
         heatmap = initial_data.kde_approximation
         heatmap = heatmap / heatmap.max()
-        resolution = initial_data.resolution
+        resolution = initial_data.home_range_resolution
 
         num = self.num
         velocity = initial_data.velocity
@@ -161,8 +171,9 @@ class MovementData(object):
                 xcoord, ycoord = zip(*trajectory)
                 ax.plot(xcoord, ycoord)
 
-        ticks = np.linspace(0, self.range, 2)
-        ax.set_xticks(ticks)
-        ax.set_yticks(ticks)
+        xticks = np.linspace(0, self.range[0], 2)
+        yticks = np.linspace(0, self.range[1], 2)
+        ax.set_xticks(xticks)
+        ax.set_yticks(yticks)
 
         return ax

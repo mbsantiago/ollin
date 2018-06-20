@@ -1,9 +1,7 @@
 import numpy as np  # pylint: disable=import-error
-
-from constants import GAMMA, OMEGA, RANGE, TAU
 from numba import jit, float64, int64
 
-from utils import velocity_to_home_range, velocity_to_resolution
+from utils import occupancy_resolution
 
 
 class Occupancy(object):
@@ -11,7 +9,7 @@ class Occupancy(object):
         self.movement_data = movement_data
         self.steps = movement_data.steps
         self.num_trials = num_trials
-        self.resolution = velocity_to_resolution(movement_data.velocity)
+        self.resolution = occupancy_resolution(movement_data.home_range)
 
         self.grid = make_grid(
             self.movement_data,
@@ -19,7 +17,9 @@ class Occupancy(object):
             num_trials=num_trials)
 
         self.occupation_nums = np.sum(self.grid, axis=1)
-        self.occupations = np.mean(self.occupation_nums / float(self.steps), (1, 2))
+        self.occupations = np.mean(
+            self.occupation_nums / float(self.steps),
+            axis=(1, 2))
         self.mean_occupation = np.mean(self.occupations)
 
     def plot(
@@ -50,14 +50,14 @@ class Occupancy(object):
             range_ = self.movement_data.range
             h, w = grid.shape
             xcoord, ycoord = np.meshgrid(
-                np.linspace(0, range_, h),
-                np.linspace(0, range_, w))
-            plt.pcolormesh(xcoord, ycoord, grid, cmap='Blues', alpha=alpha, vmax=1.0, vmin=0.0)
+                np.linspace(0, range_[0], h),
+                np.linspace(0, range_[1], w))
+            plt.pcolormesh(xcoord, ycoord, grid.T, cmap='Blues', alpha=alpha, vmax=1.0, vmin=0.0)
             plt.colorbar()
 
             if 'occupation_contour' in include:
                 mask = (grid >= lev)
-                ax.contour(xcoord, ycoord, mask, levels=[0.5], cmap='Blues')
+                ax.contour(xcoord, ycoord, mask.T, levels=[0.5], cmap='Blues')
 
 
         self.movement_data.plot(
@@ -89,12 +89,13 @@ class Occupancy(object):
     # return space
 
 
-@jit(float64[:, :, :, :](int64, float64[:, :, :], float64, int64, float64, int64), nopython=True)
+@jit(float64[:, :, :, :](int64, float64[:, :, :], float64[0], int64, float64, int64), nopython=True)
 def _make_grid(steps, array, range, num, resolution, num_trials):
 
-    num_sides = int(np.ceil(range / resolution))
+    num_sides_x = int(np.ceil(range[0] / resolution))
+    num_sides_y = int(np.ceil(range[1] / resolution))
 
-    space = np.zeros((num_trials, steps, num_sides, num_sides))
+    space = np.zeros((num_trials, steps, num_sides_x, num_sides_y))
     indices = np.floor_divide(array, resolution).astype(np.int64)
 
     for s in xrange(steps):

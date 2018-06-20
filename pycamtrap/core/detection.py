@@ -1,16 +1,33 @@
 import numpy as np
 from scipy.spatial import Voronoi, voronoi_plot_2d
 
-from constants import RANGE, CONE_RANGE, CONE_ANGLE
+from constants import handle_parameters
 
 
 class CameraConfiguration(object):
-    def __init__(self, positions, directions, range=RANGE, cone_range=CONE_RANGE, cone_angle=CONE_ANGLE):
+    def __init__(self, positions, directions, range=None, parameters=None):
+
+        if parameters is None:
+            parameters = {}
+        parameters = handle_parameters(parameters)
+
         self.positions = positions
         self.directions = directions
-        self.range = range
-        self.cone_angle = cone_angle
-        self.cone_range = cone_range
+
+        if range is None:
+            range = parameters['RANGE']
+
+        if isinstance(range, (int, float)):
+            range = np.array([range, range])
+        elif isinstance(range, (tuple, list)):
+            if len(range) == 1:
+                range = [range[0], range[0]]
+            range = np.array(range)
+        self.range = range.astype(np.float64)
+
+
+        self.cone_angle = parameters['CONE_ANGLE']
+        self.cone_range = parameters['CONE_RANGE']
         self.num_cams = len(positions)
 
     def plot(self, ax=None, cone_length=None, show_cones=True, vor=None, alpha=0.3):
@@ -19,14 +36,14 @@ class CameraConfiguration(object):
         from matplotlib.collections import PatchCollection
         if ax is None:
             fig, ax = plt.subplots(figsize=(10, 10))
-            ax.set_xticks((0, self.range))
-            ax.set_yticks((0, self.range))
+            ax.set_xticks((0, self.range[0]))
+            ax.set_yticks((0, self.range[1]))
 
         if vor is None:
             vor = Voronoi(self.positions)
         voronoi_plot_2d(vor, show_vertices=False, ax=ax)
-        ax.set_xlim(0, self.range)
-        ax.set_ylim(0, self.range)
+        ax.set_xlim(0, self.range[0])
+        ax.set_ylim(0, self.range[1])
 
         if show_cones:
             if cone_length is None:
@@ -43,30 +60,68 @@ class CameraConfiguration(object):
         return ax
 
     @classmethod
-    def make_random(cls, num, range=RANGE, min_distance=None, **kwargs):
+    def make_random(cls, num, range=None, min_distance=None, parameters=None):
+        if parameters is None:
+            parameters = {}
+        parameters = handle_parameters(parameters)
+
+        if range is None:
+            range = parameters['RANGE']
+
+        if isinstance(range, (int, float)):
+            range = np.array([range, range])
+        elif isinstance(range, (tuple, list)):
+            if len(range) == 1:
+                range = [range[0], range[0]]
+            range = np.array(range)
+        range = range.astype(np.float64)
+
         if min_distance is None:
-            positions = np.random.uniform(0, range, size=(num, 2))
+            positions_x = np.random.uniform(0, range[0], size=(num))
+            positions_y = np.random.uniform(0, range[1], size=(num))
+            positions = np.stack([positions_x, positions_y], -1)
         else:
             positions = make_random_camera_positions(
-                num, range=range, min_distance=min_distance)
+                num, range, min_distance=min_distance)
         angles = make_random_directions(num)
-        return cls(positions, angles, range=range, **kwargs)
+        return cls(positions, angles, range=range, parameters=parameters)
 
     @classmethod
-    def make_grid(cls, num, range=RANGE, **kwargs):
-        dx = range / float(num)
-        points = np.linspace(0, range, num, endpoint=False)
-        X, Y = np.meshgrid(points, points)
-        positions = np.stack((X, Y), -1) + (dx / 2)
+    def make_grid(cls, distance, range=None, parameters=None):
+        if parameters is None:
+            parameters = {}
+        parameters = handle_parameters(parameters)
+
+        if range is None:
+            range = parameters['RANGE']
+
+        if isinstance(range, (int, float)):
+            range = np.array([range, range])
+        elif isinstance(range, (tuple, list)):
+            if len(range) == 1:
+                range = [range[0], range[0]]
+            range = np.array(range)
+        range = range.astype(np.float64)
+
+        num_x = int(range[0] / distance)
+        num_y = int(range[1] / distance)
+        points_x = np.linspace(0, range[0], num_x, endpoint=False)
+        points_y = np.linspace(0, range[2], num_y, endpoint=False)
+        X, Y = np.meshgrid(points_x, points_y)
+        positions = np.stack((X, Y), -1) + (distance / 2)
         positions = positions.reshape([-1, 2])
+        num = positions.size
         angles = make_random_directions(num**2)
-        return cls(positions, angles, **kwargs)
+        return cls(positions, angles, parameters=parameters)
 
 
-def make_random_camera_positions(num, range=RANGE, min_distance=1.0):
-    random_points = np.random.uniform(range/10.0, size=[10, 10, 10, 2])
-    shift = np.linspace(0, range, 10, endpoint=False)
-    shifts = np.stack(np.meshgrid(shift, shift), -1)
+def make_random_camera_positions(num, range, min_distance=1.0):
+    random_points_x = np.random.uniform(range[0]/10.0, size=[10, 10, 10])
+    random_points_y = np.random.uniform(range[0]/10.0, size=[10, 10, 10])
+    random_points = np.stack([random_points_x, random_points_y], -1)
+    shift_x = np.linspace(0, range[0], 10, endpoint=False)
+    shift_y = np.linspace(0, range[1], 10, endpoint=False)
+    shifts = np.stack(np.meshgrid(shift_x, shift_y), -1)
     points = random_points + shifts[:, :, None, :]
 
     points = points.reshape([-1, 2])
@@ -116,8 +171,8 @@ class Detection(object):
         vor = Voronoi(self.camera_config.positions)
         if ax is None:
             fig, ax = plt.subplots(figsize=(10, 10))
-            ax.set_xticks((0, self.range))
-            ax.set_yticks((0, self.range))
+            ax.set_xticks((0, self.range[0]))
+            ax.set_yticks((0, self.range[1]))
 
         cmap = plt.get_cmap(cmap)
         max_num = self.detection_nums.max()
@@ -143,6 +198,8 @@ class Detection(object):
 
         if plot_cameras:
             self.camera_config.plot(ax=ax, vor=vor, alpha=alpha)
+
+        return ax
 
 
 def make_detection_data(movement_data, camera_config):

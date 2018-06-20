@@ -31,16 +31,28 @@ CONE_RANGE = 0.005
 CONE_ANGLE = 60
 
 
-# CALIBRATION CONSTANTS
-MIN_HOME_RANGE = 0.01
-MAX_HOME_RANGE = 100
-N_HOME_RANGE = 6
-
-
-MIN_OCCUPANCY = 0.1
-MAX_OCCUPANCY = 0.9
-N_OCCUPANCY = 6
-
-N_TRIALS = 10
-N_INDIVIDUALS = 100
-N_WORLDS = 10
+def handle_parameters(params):
+    all_params = {
+        'DT': params.get('DT', DT),
+        'DX': params.get('DX', DX),
+        'MIN_CLUSTERS': params.get('MIN_CLUSTERS', MIN_CLUSTERS),
+        'MAX_CLUSTERS': params.get('MAX_CLUSTERS', MAX_CLUSTERS),
+        'MIN_NEIGHBORS': params.get('MIN_NEIGHBORS', MIN_NEIGHBORS),
+        'MAX_NEIGHBORS': params.get('MAX_NEIGHBORS', MAX_NEIGHBORS),
+        'MAX_ITERS': params.get('MAX_ITERS', MAX_ITERS),
+        'RANGE': params.get('RANGE', RANGE),
+        'MAX_INDIVIDUALS': params.get('MAX_INDIVIDUALS', MAX_INDIVIDUALS),
+        'STEPS_PER_DAY': params.get('STEPS_PER_DAY', STEPS_PER_DAY),
+        'DAYS': params.get('DAYS', DAYS),
+        'BETA': params.get('BETA', BETA),
+        'POWER': params.get('POWER', POWER),
+        'MIN_VELOCITY': params.get('MIN_VELOCITY', MIN_VELOCITY),
+        'MAX_POINTS': params.get('MAX_POINTS', MAX_POINTS),
+        'OMEGA': params.get('OMEGA', OMEGA),
+        'GAMMA': params.get('GAMMA', GAMMA),
+        'TAU': params.get('TAU', TAU),
+        'SEASON': params.get('SEASON', SEASON),
+        'CONE_RANGE': params.get('CONE_RANGE', CONE_RANGE),
+        'CONE_ANGLE': params.get('CONE_ANGLE', CONE_ANGLE),
+    }
+    return all_params

@@ -1,14 +1,12 @@
 # pylint: disable=unbalanced-tuple-unpacking
 import numpy as np  # pylint: disable=import-error
 
-from constants import MIN_VELOCITY
-
 
 def make_grid(movement_data):
     array = movement_data.data
 
     range_ = movement_data.range
-    resolution = max(movement_data.velocity, MIN_VELOCITY)
+    resolution = movement_data.resolution
     num_sides = int(np.ceil(range_ / resolution))
     resolution = range_ / float(num_sides)
     num_trials = array.shape[0]
