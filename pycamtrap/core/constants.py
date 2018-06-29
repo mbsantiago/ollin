@@ -8,7 +8,7 @@ MIN_CLUSTERS = 2
 MAX_CLUSTERS = 10
 MIN_NEIGHBORS = 1
 MAX_NEIGHBORS = 10
-MAX_ITERS = 5
+MAX_ITERS = 10
 
 # MOVEMENT CONSTANTS
 RANGE = 22
@@ -19,6 +19,16 @@ BETA = 35
 POWER = 0.54
 MIN_VELOCITY = 0.01
 MAX_POINTS = 10000
+
+# -- Constant Levy
+ALPHA = 1.8
+
+# -- Variable Levy
+MIN_ALPHA = 1.1
+MAX_ALPHA = 1.9
+
+# -- Variable Brownian
+DEV = 0.5
 
 # DENSITY CONSTANTS
 OMEGA = 1.2
@@ -54,5 +64,9 @@ def handle_parameters(params):
         'SEASON': params.get('SEASON', SEASON),
         'CONE_RANGE': params.get('CONE_RANGE', CONE_RANGE),
         'CONE_ANGLE': params.get('CONE_ANGLE', CONE_ANGLE),
+        'MIN_ALPHA': params.get('MIN_ALPHA', MIN_ALPHA),
+        'MAX_ALPHA': params.get('MAX_ALPHA', MAX_ALPHA),
+        'ALPHA': params.get('ALPHA', ALPHA),
+        'DEV': params.get('DEV', DEV),
     }
     return all_params

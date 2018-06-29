@@ -34,13 +34,17 @@ DEFAULT_MODEL = load_model('single_species_model')
 
 
 def estimate(detection_data, method='MAP', model=None, priors_parameters=None):
+    global DEFAULT_MODEL
     if model is not None:
         DEFAULT_MODEL = load_model(model)
 
+    if priors_parameters is None:
+        priors_parameters = {}
+
     data = {
         'Days': detection_data.steps,
-        'Cams': detection_data.num_cams,
-        'Det': detection_data.agg_data,
+        'Cams': detection_data.camera_config.num_cams,
+        'Det': detection_data.detections.T.astype(int),
         'alpha_oc': priors_parameters.get('alpha_oc', 1),
         'beta_oc': priors_parameters.get('beta_oc', 1),
         'alpha_det': priors_parameters.get('alpha_det', 1),
@@ -49,7 +53,7 @@ def estimate(detection_data, method='MAP', model=None, priors_parameters=None):
     if method == 'MAP':
         op = DEFAULT_MODEL.optimizing(data=data)
         occ = op['occupancy']
-        det = op['detectavility']
+        det = op['detectability']
     elif method == 'mean':
         pass
     else:
