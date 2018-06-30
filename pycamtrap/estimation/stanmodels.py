@@ -41,21 +41,24 @@ def estimate(detection_data, method='MAP', model=None, priors_parameters=None):
     if priors_parameters is None:
         priors_parameters = {}
 
+    steps, num_cams = detection_data.shape
+
     data = {
-        'Days': detection_data.steps,
-        'Cams': detection_data.camera_config.num_cams,
-        'Det': detection_data.detections.T.astype(int),
+        'Days': steps,
+        'Cams': num_cams,
+        'Det': detection_data.T.astype(int),
         'alpha_oc': priors_parameters.get('alpha_oc', 1),
         'beta_oc': priors_parameters.get('beta_oc', 1),
         'alpha_det': priors_parameters.get('alpha_det', 1),
         'beta_det': priors_parameters.get('beta_det', 1),
     }
     if method == 'MAP':
-        op = DEFAULT_MODEL.optimizing(data=data)
+        op = DEFAULT_MODEL.optimizing(data=data, algorithm='BFGS')
         occ = op['occupancy']
         det = op['detectability']
     elif method == 'mean':
-        pass
+        # TODO
+        raise NotImplementedError
     else:
         msg = 'Estimation method {} not implemented.'.format(method)
         raise NotImplementedError(msg)

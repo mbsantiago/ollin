@@ -15,11 +15,11 @@ class Occupancy(object):
             self.movement_data,
             self.resolution)
 
-        self.occupation_nums = np.sum(self.grid, axis=1)
-        self.occupations = np.mean(
-            self.occupation_nums / float(self.steps),
+        self.occupancy_nums = np.sum(self.grid, axis=1)
+        self.occupancies = np.mean(
+            self.occupancy_nums / float(self.steps),
             axis=(1, 2))
-        self.mean_occupation = np.mean(self.occupations)
+        self.mean_occupancy = np.mean(self.occupancies)
 
     def plot(
             self,
@@ -36,13 +36,13 @@ class Occupancy(object):
 
         if include is None:
             include = [
-                'rectangle', 'niche', 'occupation', 'occupation_contour']
+                'rectangle', 'niche', 'occupancy', 'occupancy_contour']
 
-        if 'occupation' in include:
+        if 'occupancy' in include:
             if isinstance(show, int):
-                grid = self.occupation_nums[show]
+                grid = self.occupancy_nums[show]
             elif show == 'mean':
-                grid = np.mean(self.occupation_nums, axis=0)
+                grid = np.mean(self.occupancy_nums, axis=0)
 
             grid = grid / float(self.steps)
 
@@ -61,7 +61,7 @@ class Occupancy(object):
                 vmin=0.0)
             plt.colorbar(cm, ax=ax)
 
-            if 'occupation_contour' in include:
+            if 'occupancy_contour' in include:
                 mask = (grid >= lev)
                 ax.contour(xcoord, ycoord, mask.T, levels=[0.5], cmap='Blues')
 

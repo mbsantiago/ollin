@@ -1,10 +1,8 @@
 import numpy as np
 from scipy.spatial import Voronoi, voronoi_plot_2d
-from numba import jit, float64
 
 from constants import handle_parameters
-from pycamtrap.inference import make_inference
-
+from pycamtrap.estimation import make_estimate
 
 
 class CameraConfiguration(object):
@@ -32,10 +30,17 @@ class CameraConfiguration(object):
         self.cone_range = parameters['CONE_RANGE']
         self.num_cams = len(positions)
 
-    def plot(self, ax=None, cone_length=None, show_cones=True, vor=None, alpha=0.3):
+    def plot(
+            self,
+            ax=None,
+            cone_length=None,
+            show_cones=True,
+            vor=None,
+            alpha=0.3):
         import matplotlib.pyplot as plt
         from matplotlib.patches import Wedge
         from matplotlib.collections import PatchCollection
+
         if ax is None:
             fig, ax = plt.subplots(figsize=(10, 10))
             ax.set_xticks((0, self.range[0]))
@@ -140,7 +145,9 @@ def make_random_camera_positions(num, range, min_distance=1.0):
         for point in points[1:]:
             is_far = True
             for other_point in selection:
-                distance = np.sqrt((point[0] - other_point[0])**2 + (point[1] - other_point[1])**2)
+                distance = np.sqrt(
+                        (point[0] - other_point[0])**2 +
+                        (point[1] - other_point[1])**2)
                 if distance <= min_distance:
                     is_far = False
                     break
@@ -169,15 +176,22 @@ class Detection(object):
         self.num_experiments = mov.num_experiments
         self.range = mov.range
         self.grid = make_detection_data(mov, cam)
+        self.detections = np.amax(self.grid, axis=1)
+        self.detection_nums = self.detections.sum(axis=1)
 
-        self.detections = np.amax(self.grid, axis=0)
-        self.detection_nums = self.detections.sum(axis=0)
-        self.total_detections = self.detection_nums.sum()
+    def estimate(self, type='stan'):
+        return make_estimate(self, type=type)
 
-    def infer(self, type='areas'):
-        return make_inference(self, type)
-
-    def plot(self, ax=None, plot_cameras=True, cone_length=None, cmap='Purples', colorbar=True, movement=False, alpha=0.2):
+    def plot(
+            self,
+            ax=None,
+            plot_cameras=True,
+            cone_length=None,
+            cmap='Purples',
+            colorbar=True,
+            movement=False,
+            alpha=0.2,
+            experiment_number=0):
         import matplotlib.pyplot as plt
         from matplotlib.cm import ScalarMappable
         from matplotlib.colors import Normalize
@@ -191,7 +205,11 @@ class Detection(object):
         cmap = plt.get_cmap(cmap)
         max_num = self.detection_nums.max()
         regions, vertices = voronoi_finite_polygons_2d(vor)
-        for reg, num in zip(regions, self.detection_nums):
+        if experiment_number == 'mean':
+            nums = self.detection_nums.mean(axis=0)
+        else:
+            nums = self.detection_nums[experiment_number]
+        for reg, num in zip(regions, nums):
             polygon = vertices[reg]
             X, Y = zip(*polygon)
             color = cmap(num / float(max_num))
@@ -207,73 +225,43 @@ class Detection(object):
             plt.colorbar(mappable, ax=ax)
 
         if plot_cameras:
-            self.camera_config.plot(ax=ax, vor=vor, alpha=alpha, cone_length=cone_length)
+            self.camera_config.plot(
+                ax=ax,
+                vor=vor,
+                alpha=alpha,
+                cone_length=cone_length)
 
         return ax
-
-
-@jit(
-    float64[:, :, :, :](
-        float64[:, :, :, :],
-        float64[:, :],
-        float64[:, :],
-        float64,
-        float64),
-    nopython=True)
-def _make_grid(array, positions, directions, camera_range, camera_angle):
-    num_experiments, num, steps, _ = array.shape
-    num_cameras, _ = positions.shape
-    angle_rad = np.pi * camera_angle / 360.0
-
-    grid = np.zeros((num_experiments, num, steps, num_cameras))
-    comp_dirs = directions[:, 0] + 1j * directions[:, 1]
-
-    for r in xrange(num_experiments):
-        for i in xrange(steps):
-            for j in xrange(num_cameras):
-                for k in xrange(num):
-                    cam_pos = positions[j]
-                    cam_dir = comp_dirs[j]
-                    ind_pos = array[r, k, i]
-                    distance = np.sqrt(np.sum((cam_pos - ind_pos)**2))
-                    if distance > camera_range:
-                        continue
-                    rel_pos = ind_pos - cam_pos
-                    comp_pos = rel_pos[0] + 1j * rel_pos[1]
-                    comp_pos = comp_pos / np.abs(comp_pos)
-
-                    angle = np.angle(cam_dir / comp_pos)
-                    if angle <= angle_rad:
-                        grid[r, k, i, j] = 1
-                        break
-    return grid
 
 
 def make_detection_data(movement_data, camera_config):
     camera_position = camera_config.positions
     camera_direction = camera_config.directions
+    camera_direction = camera_direction[:, 0] + 1j * camera_direction[:, 1]
     num_cameras = len(camera_position)
 
-    species_movement = movement_data.data
-    num_experiments, num, steps, _ = species_movement.shape
-    species_movement = species_movement.reshape([num_experiments * num, steps, 2])
+    movement_data = movement_data.data
+    num_experiments, num, steps, _ = movement_data.shape
     cone_range = camera_config.cone_range
     cone_angle = camera_config.cone_angle
 
-    relative_pos = species_movement[:, :, None, :] - camera_position[None, None, :, :]
-    norm = np.sqrt(np.sum(relative_pos**2, -1))
-    closeness = np.less(norm, cone_range)
+    grid = np.zeros((num_experiments, num, steps, num_cameras))
 
-    direction = np.divide(
-        relative_pos, norm[..., None], where=closeness[..., None])
-    angles = np.arccos(
-        np.sum(camera_direction * direction, -1), where=closeness)
+    for k in xrange(num_experiments):
+        species_movement = movement_data[k, :, :, :]
 
-    angle = np.pi * (cone_angle / 360.0)
-    is_in_angle = np.less(angles, angle, where=closeness)
+        relative_pos = (species_movement[:, :, None, :] -
+                        camera_position[None, None, :, :])
+        relative_pos = relative_pos[:, :, :, 0] + 1j * relative_pos[:, :, :, 1]
+        norm = np.abs(relative_pos)
+        closeness = np.less(norm, cone_range)
 
-    detected = closeness * is_in_angle
-    return detected.reshape([num_experiments, num, steps, num_cameras])
+        angles = np.abs(np.angle(relative_pos / camera_direction, deg=1))
+        is_in_angle = np.less(angles, cone_angle / 2.0, where=closeness)
+
+        detected = closeness * is_in_angle
+        grid[k, :, :, :] = detected
+    return grid
 
 
 def voronoi_finite_polygons_2d(vor, radius=None):
@@ -336,7 +324,7 @@ def voronoi_finite_polygons_2d(vor, radius=None):
                 continue
 
             # Compute the missing endpoint of an infinite ridge
-            t = vor.points[p2] - vor.points[p1] # tangent
+            t = vor.points[p2] - vor.points[p1]  # tangent
             t /= np.linalg.norm(t)
             n = np.array([-t[1], t[0]])  # normal
 
@@ -350,7 +338,7 @@ def voronoi_finite_polygons_2d(vor, radius=None):
         # sort region counterclockwise
         vs = np.asarray([new_vertices[v] for v in new_region])
         c = vs.mean(axis=0)
-        angles = np.arctan2(vs[:,1] - c[1], vs[:,0] - c[0])
+        angles = np.arctan2(vs[:, 1] - c[1], vs[:, 0] - c[0])
         new_region = np.array(new_region)[np.argsort(angles)]
 
         # finish

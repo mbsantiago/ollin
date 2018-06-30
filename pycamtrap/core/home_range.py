@@ -21,8 +21,7 @@ def _make_grid(array, range, resolution):
     space = np.zeros([num_trials, num_sides_x, num_sides_y])
     indices = np.true_divide(array, resolution).astype(np.int)
 
-    xcoords = np.linspace(
-            0, num_trials,
+    xcoords = np.linspace( 0, num_trials,
             num_trials * steps,
             endpoint=False).astype(np.int).reshape([-1, 1])
     ycoords, zcoords = np.split(indices.reshape([-1, 2]), 2, -1)
