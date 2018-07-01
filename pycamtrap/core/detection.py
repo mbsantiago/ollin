@@ -7,9 +7,6 @@ from pycamtrap.estimation import make_estimate
 
 class CameraConfiguration(object):
     def __init__(self, positions, directions, range=None, parameters=None):
-
-        if parameters is None:
-            parameters = {}
         parameters = handle_parameters(parameters)
 
         self.positions = positions
@@ -174,7 +171,7 @@ class Detection(object):
 
         self.steps = mov.steps
         self.num_experiments = mov.num_experiments
-        self.range = mov.range
+        self.range = mov.initial_conditions.range
         self.grid = make_detection_data(mov, cam)
         self.detections = np.amax(self.grid, axis=1)
         self.detection_nums = self.detections.sum(axis=1)

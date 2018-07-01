@@ -15,7 +15,7 @@ def home_range_to_velocity(home_range, parameters=None):
 def velocity_to_home_range(velocity, parameters=None):
     dt = parameters['DT']
     power = parameters['POWER']
-    beta = parameters['POWER']
+    beta = parameters['BETA']
     return np.power(velocity * dt / beta, 1/power)
 
 

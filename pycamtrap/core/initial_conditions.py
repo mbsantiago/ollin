@@ -27,8 +27,6 @@ class InitialCondition(object):
             kde_points=None,
             parameters=None):
 
-        if parameters is None:
-            parameters = {}
         parameters = handle_parameters(parameters)
         self.parameters = parameters
 
@@ -151,7 +149,7 @@ class InitialCondition(object):
             parameters=parameters)
         return init
 
-    def plot(self, include=None, ax=None, transpose=False):
+    def plot(self, include=None, ax=None, niche_cmap='Reds'):
         import matplotlib.pyplot as plt  # pylint: disable=import-error
 
         if include is None:
@@ -172,14 +170,12 @@ class InitialCondition(object):
             heatmap = self.kde_approximation
             sizex = heatmap.shape[0]
             sizey = heatmap.shape[1]
-            if transpose:
-                heatmap = heatmap.T
             Xrange, Yrange = np.meshgrid(
                     np.linspace(0, self.range[0], sizex),
                     np.linspace(0, self.range[1], sizey))
 
         if 'heatmap' in include:
-            ax.pcolormesh(Xrange, Yrange, heatmap.T, cmap='Reds')
+            ax.pcolormesh(Xrange, Yrange, heatmap.T, cmap=niche_cmap)
 
         if 'niche' in include:
             zone = occupation_space_from_approximation(heatmap)

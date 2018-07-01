@@ -42,6 +42,8 @@ CONE_ANGLE = 60
 
 
 def handle_parameters(params):
+    if params is None:
+        params = {}
     all_params = {
         'DT': params.get('DT', DT),
         'DX': params.get('DX', DX),
@@ -69,4 +71,5 @@ def handle_parameters(params):
         'ALPHA': params.get('ALPHA', ALPHA),
         'DEV': params.get('DEV', DEV),
     }
-    return all_params
+    params.update(all_params)
+    return params

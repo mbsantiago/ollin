@@ -9,7 +9,8 @@ class Occupancy(object):
         self.movement_data = movement_data
         self.steps = movement_data.steps
         self.num_experiments = movement_data.num_experiments
-        self.resolution = occupancy_resolution(movement_data.home_range)
+        self.resolution = occupancy_resolution(
+            movement_data.initial_conditions.home_range)
 
         self.grid = make_grid(
             self.movement_data,
@@ -27,7 +28,6 @@ class Occupancy(object):
             ax=None,
             show=0,
             lev=0.2,
-            transpose=False,
             alpha=0.3,
             **kwargs):
         import matplotlib.pyplot as plt  # pylint: disable=import-error
@@ -46,7 +46,7 @@ class Occupancy(object):
 
             grid = grid / float(self.steps)
 
-            range_ = self.movement_data.range
+            range_ = self.movement_data.initial_conditions.range
             h, w = grid.shape
             xcoord, ycoord = np.meshgrid(
                 np.linspace(0, range_[0], h),
@@ -66,7 +66,7 @@ class Occupancy(object):
                 ax.contour(xcoord, ycoord, mask.T, levels=[0.5], cmap='Blues')
 
         self.movement_data.plot(
-                include, ax=ax, transpose=transpose, **kwargs)
+                include, ax=ax, **kwargs)
 
         return ax
 
@@ -95,4 +95,4 @@ def _make_grid(array, range, resolution):
 
 
 def make_grid(mov, resolution):
-    return _make_grid(mov.data, mov.range, resolution)
+    return _make_grid(mov.data, mov.initial_conditions.range, resolution)
