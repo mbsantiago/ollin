@@ -126,6 +126,8 @@ GLM_PARAMETERS = {
 
 
 def handle_global_constants(params):
+    if params is None:
+        params = {}
     copy = GLOBAL_CONSTANTS.copy()
     copy.update(params)
     return copy

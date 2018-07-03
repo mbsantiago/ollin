@@ -11,19 +11,27 @@ import numpy as np  # pylint: disable=import-error
 from cycler import cycler  # pylint: disable=import-error
 from numba import jit, float64, int64
 
-import initial_conditions
 from constants import handle_movement_parameters
 
 from utils import density, home_range_to_velocity
 
 
 def normalize(array):
-    extent = array.max() - array.min()
-    if extent == 0:
-        normalized = 0.5 * np.ones_like(array)
+    array = array - array.min()
+    mean = array.mean()
+    if mean == 0:
+        array[:, :] = 1.0
     else:
-        normalized = (array - array.min()) / extent
-    return normalized
+        array /= mean
+    return array
+
+# def normalize(array):
+#     extent = array.max() - array.min()
+#     if extent == 0:
+#         normalized = 0.5 * np.ones_like(array)
+#     else:
+#         normalized = (array - array.min()) / extent
+#     return normalized
 
 
 class MovementModel(object):
