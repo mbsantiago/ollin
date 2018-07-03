@@ -1,75 +1,165 @@
 """Constants for simulator"""
-# UNITS OF MEASUREMENT
-DT = 365
-DX = 0.2
-
-# INITIAL CONDITIONS
+# INITIAL CONDITION CONSTANTS
+RANGE = 20
 MIN_CLUSTERS = 2
 MAX_CLUSTERS = 10
 MIN_NEIGHBORS = 1
 MAX_NEIGHBORS = 10
 MAX_ITERS = 10
 
-# MOVEMENT CONSTANTS
-RANGE = 22
-MAX_INDIVIDUALS = 10000
-STEPS_PER_DAY = 4
+# GLOBAL HOME RANGE CONSTANTS
+HR_DAYS = 365
+
+# MOVEMENT DATA DEFAULTS
 DAYS = 365
-BETA = 35
-POWER = 0.54
-MIN_VELOCITY = 0.01
-MAX_POINTS = 10000
 
-# -- Constant Levy
-ALPHA = 1.8
+# GLOBAL VELOCITY CONSTANTS
+HR2VEL_EXPONENT = 0.54
 
-# -- Variable Levy
-MIN_ALPHA = 1.1
-MAX_ALPHA = 1.9
+# GLOBAL MOVEMENT CONSTANTS
+STEPS_PER_DAY = 4
 
-# -- Variable Brownian
-DEV = 0.5
-
-# DENSITY CONSTANTS
-OMEGA = 1.2
-GAMMA = 22.0
-TAU = 1.75
-SEASON = 90
-
-# CAMERA CONSTANTS
-CONE_RANGE = 0.005
+# GLOBAL CAMERA CONSTANTS
+CONE_RANGE = 0.01
 CONE_ANGLE = 60
 
+# GLOBAL OCCUPANCY CONSTANTS
+SEASON = 90
 
-def handle_parameters(params):
+GLOBAL_CONSTANTS = {
+    'range': RANGE,
+    'min_clusters': MIN_CLUSTERS,
+    'max_clusters': MAX_CLUSTERS,
+    'min_neighbors': MIN_NEIGHBORS,
+    'max_neighbors': MAX_NEIGHBORS,
+    'max_iters': MAX_ITERS,
+    'hr_days': HR_DAYS,
+    'days': DAYS,
+    'steps_per_day': STEPS_PER_DAY,
+    'cone_range': CONE_RANGE,
+    'cone_angle': CONE_ANGLE,
+    'season': SEASON,
+    'hr2vel_exponent': HR2VEL_EXPONENT,
+}
+
+# CONSTANTS FOR MOVEMENT MODELS
+# --- CONSTANT BROWNIAN MODEL ---
+CBM_PARAMETERS = {
+    'velocity': {
+        'alpha': 35.0,
+        'exponent': 0.54},
+    'density': {
+        'alpha': 22.0,
+        'hr_exp': 1.2,
+        'occ_exp': 1.75},
+    'movement': {},
+}
+
+# --- VARIABLE BROWNIAN MODEL ---
+VBM_PARAMETERS = {
+    'velocity': {
+        'alpha': 35.0,
+        'exponent': 0.54},
+    'density': {
+        'alpha': 22.0,
+        'hr_exp': 1.2,
+        'occ_exp': 1.75},
+    'movement': {
+        'niche_weight': 0.2},
+}
+
+# --- GRADIENT BROWNIAN MODEL ---
+GBM_PARAMETERS = {
+    'velocity': {
+        'alpha': 35.0,
+        'exponent': 0.54},
+    'density': {
+        'alpha': 22.0,
+        'hr_exp': 1.2,
+        'occ_exp': 1.75},
+    'movement': {
+        'grad_weight': 0.5},
+}
+
+# --- CONSTANT LEVY MODEL ---
+CLM_PARAMETERS = {
+    'velocity': {
+        'alpha': 35.0,
+        'exponent': 0.54},
+    'density': {
+        'alpha': 22.0,
+        'hr_exp': 1.2,
+        'occ_exp': 1.75},
+    'movement': {
+        'pareto': 1.8},
+}
+
+
+# --- VARIABLE LEVY MODEL ---
+VLM_PARAMETERS = {
+    'velocity': {
+        'alpha': 35.0,
+        'exponent': 0.54},
+    'density': {
+        'alpha': 22.0,
+        'hr_exp': 1.2,
+        'occ_exp': 1.75},
+    'movement': {
+        'min_pareto': 1.1,
+        'max_pareto': 1.9},
+}
+
+# --- GRADIENT LEVY MODEL ---
+GLM_PARAMETERS = {
+    'velocity': {
+        'alpha': 35.0,
+        'exponent': 0.54},
+    'density': {
+        'alpha': 22.0,
+        'hr_exp': 1.2,
+        'occ_exp': 1.75},
+    'movement': {
+        'min_pareto': 1.1,
+        'max_pareto': 1.9,
+        'grad_weight': 2.0},
+}
+
+
+def handle_global_constants(params):
+    copy = GLOBAL_CONSTANTS.copy()
+    copy.update(params)
+    return copy
+
+
+def add_missing_entries(dict1, dict2):
+    for key in dict1:
+        if key in dict2:
+            if isinstance(dict1[key], dict):
+                copy = dict1[key].copy()
+                copy.update(dict2[key])
+                dict2[key] = copy
+        else:
+            dict2[key] = dict1[key]
+    if 'global' in dict2:
+        dict2['global'] = handle_global_constants(dict2['global'])
+    else:
+        dict2['global'] = GLOBAL_CONSTANTS
+    return dict2
+
+
+def handle_movement_parameters(params, model):
     if params is None:
         params = {}
-    all_params = {
-        'DT': params.get('DT', DT),
-        'DX': params.get('DX', DX),
-        'MIN_CLUSTERS': params.get('MIN_CLUSTERS', MIN_CLUSTERS),
-        'MAX_CLUSTERS': params.get('MAX_CLUSTERS', MAX_CLUSTERS),
-        'MIN_NEIGHBORS': params.get('MIN_NEIGHBORS', MIN_NEIGHBORS),
-        'MAX_NEIGHBORS': params.get('MAX_NEIGHBORS', MAX_NEIGHBORS),
-        'MAX_ITERS': params.get('MAX_ITERS', MAX_ITERS),
-        'RANGE': params.get('RANGE', RANGE),
-        'MAX_INDIVIDUALS': params.get('MAX_INDIVIDUALS', MAX_INDIVIDUALS),
-        'STEPS_PER_DAY': params.get('STEPS_PER_DAY', STEPS_PER_DAY),
-        'DAYS': params.get('DAYS', DAYS),
-        'BETA': params.get('BETA', BETA),
-        'POWER': params.get('POWER', POWER),
-        'MIN_VELOCITY': params.get('MIN_VELOCITY', MIN_VELOCITY),
-        'MAX_POINTS': params.get('MAX_POINTS', MAX_POINTS),
-        'OMEGA': params.get('OMEGA', OMEGA),
-        'GAMMA': params.get('GAMMA', GAMMA),
-        'TAU': params.get('TAU', TAU),
-        'SEASON': params.get('SEASON', SEASON),
-        'CONE_RANGE': params.get('CONE_RANGE', CONE_RANGE),
-        'CONE_ANGLE': params.get('CONE_ANGLE', CONE_ANGLE),
-        'MIN_ALPHA': params.get('MIN_ALPHA', MIN_ALPHA),
-        'MAX_ALPHA': params.get('MAX_ALPHA', MAX_ALPHA),
-        'ALPHA': params.get('ALPHA', ALPHA),
-        'DEV': params.get('DEV', DEV),
-    }
-    params.update(all_params)
+    if model == 'Constant Brownian Model':
+        params = add_missing_entries(CBM_PARAMETERS, params)
+    elif model == 'Variable Brownian Model':
+        params = add_missing_entries(VBM_PARAMETERS, params)
+    elif model == 'Gradient Brownian Model':
+        params = add_missing_entries(GBM_PARAMETERS, params)
+    elif model == 'Constant Levy Model':
+        params = add_missing_entries(CLM_PARAMETERS, params)
+    elif model == 'Variable Levy Model':
+        params = add_missing_entries(VLM_PARAMETERS, params)
+    elif model == 'Gradient Levy Model':
+        params = add_missing_entries(GLM_PARAMETERS, params)
     return params

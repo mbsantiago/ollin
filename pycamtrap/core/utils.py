@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 
 
@@ -6,26 +7,26 @@ def occupancy_resolution(home_range, parameters=None):
 
 
 def home_range_to_velocity(home_range, parameters=None):
-    beta = parameters['BETA']
-    power = parameters['POWER']
-    dt = parameters['DT']
-    return beta * np.power(home_range, power) / float(dt)
+    days = parameters['global']['hr_days']
+    exponent = parameters['velocity']['exponent']
+    vel_mod = parameters['velocity']['alpha']
+    return vel_mod * np.power(home_range, exponent) / days
 
 
 def velocity_to_home_range(velocity, parameters=None):
-    dt = parameters['DT']
-    power = parameters['POWER']
-    beta = parameters['BETA']
-    return np.power(velocity * dt / beta, 1/power)
+    days = parameters['global']['hr_days']
+    exponent = parameters['velocity']['exponent']
+    vel_mod = parameters['velocity']['alpha']
+    return np.exponent(velocity * days / vel_mod, 1/exponent)
 
 
 def density(occupancy, home_range, parameters=None):
-    gamma = parameters['GAMMA']
-    omega = parameters['OMEGA']
-    tau = parameters['TAU']
-    density = gamma * (occupancy**tau) / (home_range)**omega
+    alpha = parameters['alpha']
+    hr_exp = parameters['hr_exp']
+    occ_exp = parameters['occ_exp']
+    density = alpha * (occupancy**occ_exp) / (home_range)**hr_exp
     return density
 
 
-def home_range_resolution(velocity, parameters=None):
-    return velocity
+def home_range_resolution(home_range, parameters=None):
+    return np.sqrt(home_range) / 10.0

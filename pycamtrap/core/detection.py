@@ -1,13 +1,13 @@
 import numpy as np
 from scipy.spatial import Voronoi, voronoi_plot_2d
 
-from constants import handle_parameters
+from constants import handle_global_constants
 from pycamtrap.estimation import make_estimate
 
 
 class CameraConfiguration(object):
     def __init__(self, positions, directions, range=None, parameters=None):
-        parameters = handle_parameters(parameters)
+        parameters = handle_global_constants(parameters)
 
         self.positions = positions
         self.directions = directions
@@ -67,7 +67,7 @@ class CameraConfiguration(object):
     def make_random(cls, num, range=None, min_distance=None, parameters=None):
         if parameters is None:
             parameters = {}
-        parameters = handle_parameters(parameters)
+        parameters = handle_global_constants(parameters)
 
         if range is None:
             range = parameters['RANGE']

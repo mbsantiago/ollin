@@ -6,16 +6,10 @@ from scipy.stats import gaussian_kde  # pylint: disable=import-error
 from utils import (home_range_to_velocity,
                    home_range_resolution,
                    occupancy_resolution)
-from constants import handle_parameters
+from constants import handle_global_constants
 
 from home_range import _make_grid as hr_grid
 from occupancy import _make_grid as oc_grid
-
-
-PLOT_OPTIONS = [
-    'rectangle', 'kde_points', 'heatmap', 'niche',
-    'initial_positions'
-]
 
 
 class InitialCondition(object):
@@ -27,11 +21,11 @@ class InitialCondition(object):
             kde_points=None,
             parameters=None):
 
-        parameters = handle_parameters(parameters)
+        parameters = handle_global_constants(parameters)
         self.parameters = parameters
 
         if range is None:
-            range = parameters['RANGE']
+            range = parameters['range']
 
         if isinstance(range, (int, float)):
             range = np.array([range, range])
@@ -44,10 +38,8 @@ class InitialCondition(object):
         self.occupancy = occupancy
         self.home_range = home_range
 
-        self.velocity = home_range_to_velocity(
-            home_range, parameters=parameters)
         self.home_range_resolution = home_range_resolution(
-            self.velocity, parameters=parameters)
+            self.home_range, parameters=parameters)
 
         if kde_points is None:
             kde_points, n_clusters = self.make_cluster_points()
@@ -86,7 +78,7 @@ class InitialCondition(object):
 
         if parameters is None:
             parameters = {}
-        parameters = handle_parameters(parameters)
+        parameters = handle_global_constants(parameters)
 
         points = np.array(points)
 
@@ -195,10 +187,10 @@ class InitialCondition(object):
 
 
 def make_cluster_points(range, parameters=None):
-    min_clusters = parameters['MIN_CLUSTERS']
-    max_clusters = parameters['MAX_CLUSTERS']
-    min_neighbors = parameters['MIN_NEIGHBORS']
-    max_neighbors = parameters['MAX_NEIGHBORS']
+    min_clusters = parameters['min_clusters']
+    max_clusters = parameters['max_clusters']
+    min_neighbors = parameters['min_neighbors']
+    max_neighbors = parameters['max_neighbors']
 
     n_clusters = np.random.randint(min_clusters, max_clusters)
 
@@ -247,7 +239,7 @@ def make_kde(
         resolution=1.0,
         epsilon=0.05,
         parameters=None):
-    max_iters = parameters['MAX_ITERS']
+    max_iters = parameters['max_iters']
 
     max_bw = range.max() / 2
     min_bw = 0.01

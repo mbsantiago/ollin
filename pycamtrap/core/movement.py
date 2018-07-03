@@ -3,6 +3,7 @@
 Movement of individuals is assumed to happen in a square space.
 TODO docstring
 """
+from __future__ import division
 # pylint: disable=unbalanced-tuple-unpacking
 from abc import abstractmethod
 import math
@@ -11,9 +12,9 @@ from cycler import cycler  # pylint: disable=import-error
 from numba import jit, float64, int64
 
 import initial_conditions
-from constants import handle_parameters
+from constants import handle_movement_parameters
 
-from utils import density
+from utils import density, home_range_to_velocity
 
 
 def normalize(array):
@@ -26,8 +27,10 @@ def normalize(array):
 
 
 class MovementModel(object):
-    def __init__(self):
-        pass
+    name = None
+
+    def __init__(self, parameters):
+        self.parameters = handle_movement_parameters(parameters, self.name)
 
     @abstractmethod
     def generate_movement(self, initial_position, initial_conditions):
@@ -37,36 +40,31 @@ class MovementModel(object):
 class ConstantLevyMovement(MovementModel):
     name = 'Constant Levy Model'
 
-    def __init__(self, parameters=None):
-        super(ConstantLevyMovement, self).__init__()
-
-        if parameters is None:
-            parameters = {}
-        parameters = handle_parameters(parameters)
-
-        self.alpha = parameters['ALPHA']
-        self.steps_per_day = parameters['STEPS_PER_DAY']
+    def __init__(self, parameters):
+        super(ConstantLevyMovement, self).__init__(parameters)
 
     def generate_movement(self, initial_positions, initial_conditions, days):
-        velocity = initial_conditions.velocity / float(self.steps_per_day)
-        num = len(initial_positions)
+        exponent = self.parameters['movement']['pareto']
+        steps_per_day = self.parameters['global']['steps_per_day']
+
+        base_vel = home_range_to_velocity(
+            initial_conditions.home_range, parameters=self.parameters)
+        velocity = base_vel / steps_per_day
         range_ = initial_conditions.range
-        alpha = self.alpha
-        steps = days * self.steps_per_day
+
+        steps = days * steps_per_day
         mov = self._movement(
             initial_positions,
-            num,
             velocity,
             range_,
             steps,
-            alpha)
+            exponent)
         return mov
 
     @staticmethod
     @jit(
         float64[:, :, :](
             float64[:, :],
-            int64,
             float64,
             float64[:],
             int64,
@@ -74,15 +72,14 @@ class ConstantLevyMovement(MovementModel):
         nopython=True)
     def _movement(
             random_positions,
-            num,
             velocity,
             range_,
             steps,
-            alpha):
+            exponent):
+        num, _ = random_positions.shape
         movement = np.zeros((num, steps, 2), dtype=float64)
         random_angles = np.random.uniform(0.0, 2 * np.pi, size=(steps, num))
         rangex, rangey = range_
-        exponent = alpha
         for k in xrange(steps):
             movement[:, k, :] = random_positions
             for j in xrange(num):
@@ -110,35 +107,31 @@ class VariableLevyMovement(MovementModel):
     name = 'Variable Levy Model'
 
     def __init__(self, parameters=None):
-        super(VariableLevyMovement, self).__init__()
-
-        if parameters is None:
-            parameters = {}
-        parameters = handle_parameters(parameters)
-
-        self.min_alpha = parameters['MIN_ALPHA']
-        self.max_alpha = parameters['MAX_ALPHA']
-        self.steps_per_day = parameters['STEPS_PER_DAY']
+        super(VariableLevyMovement, self).__init__(parameters)
 
     def generate_movement(self, initial_positions, initial_conditions, days):
+        min_exponent = self.parameters['movement']['min_pareto']
+        max_exponent = self.parameters['movement']['max_pareto']
+        steps_per_day = self.parameters['global']['steps_per_day']
+
+        base_vel = home_range_to_velocity(
+                initial_conditions.home_range, parameters=self.parameters)
+        range_ = initial_conditions.range
         heatmap = normalize(initial_conditions.kde_approximation)
         resolution = initial_conditions.home_range_resolution
-        num = len(initial_positions)
-        velocity = initial_conditions.velocity / float(self.steps_per_day)
-        range_ = initial_conditions.range
-        steps = days * self.steps_per_day
-        min_alpha = self.min_alpha
-        max_alpha = self.max_alpha
+
+        velocity = base_vel / steps_per_day
+        steps = days * steps_per_day
+
         mov = self._movement(
             heatmap,
             initial_positions,
             resolution,
-            num,
             velocity,
             range_,
             steps,
-            min_alpha,
-            max_alpha)
+            min_exponent,
+            max_exponent)
         return mov
 
     @staticmethod
@@ -147,7 +140,6 @@ class VariableLevyMovement(MovementModel):
             float64[:, :],
             float64[:, :],
             float64,
-            int64,
             float64,
             float64[:],
             int64,
@@ -158,16 +150,16 @@ class VariableLevyMovement(MovementModel):
             heatmap,
             random_positions,
             resolution,
-            num,
             velocity,
             range_,
             steps,
-            min_alpha,
-            max_alpha):
+            min_exponent,
+            max_exponent):
+        num, _ = random_positions.shape
         movement = np.zeros((num, steps, 2), dtype=float64)
         random_angles = np.random.uniform(0.0, 2 * np.pi, size=(steps, num))
         rangex, rangey = range_
-        alpha_var = max_alpha - min_alpha
+        exponent_var = max_exponent - min_exponent
 
         for k in xrange(steps):
             movement[:, k, :] = random_positions
@@ -178,7 +170,7 @@ class VariableLevyMovement(MovementModel):
                     random_positions[j, 0] // resolution,
                     random_positions[j, 1] // resolution)
                 value = heatmap[int(index[0]), int(index[1])]
-                exponent = min_alpha + alpha_var * value
+                exponent = min_exponent + exponent_var * value
                 magnitude = (velocity * (exponent - 1)) / \
                     (math.pow((1 - np.random.rand()), 1/exponent) * exponent)
                 direction = (magnitude * heading[0], magnitude * heading[1])
@@ -203,19 +195,19 @@ class ConstantBrownianMovement(MovementModel):
     name = 'Constant Brownian Model'
 
     def __init__(self, parameters=None):
-        super(ConstantBrownianMovement, self).__init__()
-
-        parameters = handle_parameters(parameters)
-        self.steps_per_day = parameters['STEPS_PER_DAY']
+        super(ConstantBrownianMovement, self).__init__(parameters)
 
     def generate_movement(self, initial_positions, initial_conditions, days):
-        num = len(initial_positions)
-        velocity = initial_conditions.velocity / float(self.steps_per_day)
+        steps_per_day = self.parameters['global']['steps_per_day']
+
+        base_vel = home_range_to_velocity(
+                initial_conditions.home_range, parameters=self.parameters)
         range_ = initial_conditions.range
-        steps = days * self.steps_per_day
+
+        velocity = base_vel / steps_per_day
+        steps = days * steps_per_day
         mov = self._movement(
             initial_positions,
-            num,
             velocity,
             range_,
             steps)
@@ -223,19 +215,18 @@ class ConstantBrownianMovement(MovementModel):
 
     @staticmethod
     @jit(
-            float64[:, :, :](
-                float64[:, :],
-                int64,
-                float64,
-                float64[:],
-                int64),
-            nopython=True)
+        float64[:, :, :](
+            float64[:, :],
+            float64,
+            float64[:],
+            int64),
+        nopython=True)
     def _movement(
             random_positions,
-            num,
             velocity,
             range_,
             steps):
+        num, _ = random_positions.shape
         movement = np.zeros((num, steps, 2), dtype=float64)
         sigma = velocity / 1.2533141373155003
         rangex, rangey = range_
@@ -267,28 +258,28 @@ class VariableBrownianMovement(MovementModel):
     name = 'Variable Brownian Model'
 
     def __init__(self, parameters=None):
-        super(VariableBrownianMovement, self).__init__()
-        parameters = handle_parameters(parameters)
-
-        self.dev = parameters['DEV']
-        self.steps_per_day = parameters['STEPS_PER_DAY']
+        super(VariableBrownianMovement, self).__init__(parameters)
 
     def generate_movement(self, initial_positions, initial_conditions, days):
+        steps_per_day = self.parameters['global']['steps_per_day']
+        niche_weight = self.parameters['movement']['niche_weight']
+
         heatmap = normalize(initial_conditions.kde_approximation)
         resolution = initial_conditions.home_range_resolution
-        num = len(initial_positions)
-        velocity = initial_conditions.velocity / float(self.steps_per_day)
+        base_vel = home_range_to_velocity(
+                initial_conditions.home_range, parameters=self.parameters)
         range_ = initial_conditions.range
-        steps = days * self.steps_per_day
+
+        velocity = base_vel / steps_per_day
+        steps = days * steps_per_day
         mov = self._movement(
             heatmap,
             initial_positions,
             resolution,
-            num,
             velocity,
             range_,
             steps,
-            self.dev)
+            niche_weight)
         return mov
 
     @staticmethod
@@ -297,7 +288,6 @@ class VariableBrownianMovement(MovementModel):
                 float64[:, :],
                 float64[:, :],
                 float64,
-                int64,
                 float64,
                 float64[:],
                 int64,
@@ -307,11 +297,11 @@ class VariableBrownianMovement(MovementModel):
             heatmap,
             random_positions,
             resolution,
-            num,
             velocity,
             range_,
             steps,
-            dev):
+            niche_weight):
+        num, _ = random_positions.shape
         movement = np.zeros((num, steps, 2), dtype=float64)
         sigma = velocity / 1.2533141373155003
         rangex, rangey = range_
@@ -326,7 +316,7 @@ class VariableBrownianMovement(MovementModel):
                         random_positions[j, 0] // resolution,
                         random_positions[j, 1] // resolution)
                 value = heatmap[int(index[0]), int(index[1])]
-                direction *= 1 + dev * (1 / (2 * value + 0.1))
+                direction *= 1 + niche_weight * (1 / (2 * value + 0.1))
                 tmp1 = (
                         random_positions[j, 0] + direction[0],
                         random_positions[j, 1] + direction[1])
@@ -348,21 +338,23 @@ class GradientLevyMovement(MovementModel):
     name = 'Gradient Levy Model'
 
     def __init__(self, parameters):
-        super(GradientLevyMovement, self).__init__()
-        parameters = handle_parameters(parameters)
-
-        self.steps_per_day = parameters['STEPS_PER_DAY']
-        self.nu = parameters.get('NU', 1)
-        self.min_alpha = parameters['MIN_ALPHA']
-        self.max_alpha = parameters['MAX_ALPHA']
+        super(GradientLevyMovement, self).__init__(parameters)
 
     def generate_movement(self, initial_positions, initial_conditions, days):
+        steps_per_day = self.parameters['global']['steps_per_day']
+        min_exponent = self.parameters['movement']['min_pareto']
+        max_exponent = self.parameters['movement']['max_pareto']
+        grad_weight = self.parameters['movement']['grad_weight']
+
         heatmap = normalize(initial_conditions.kde_approximation)
         gradient = np.stack(np.gradient(heatmap), -1)
         resolution = initial_conditions.home_range_resolution
-        velocity = initial_conditions.velocity / float(self.steps_per_day)
         range_ = initial_conditions.range
-        steps = days * self.steps_per_day
+        base_vel = home_range_to_velocity(
+                initial_conditions.home_range, parameters=self.parameters)
+
+        velocity = base_vel / steps_per_day
+        steps = days * steps_per_day
 
         mov = self._movement(
             gradient,
@@ -372,9 +364,9 @@ class GradientLevyMovement(MovementModel):
             velocity,
             range_,
             steps,
-            self.min_alpha,
-            self.max_alpha,
-            self.nu)
+            min_exponent,
+            max_exponent,
+            grad_weight)
         return mov
 
     @staticmethod
@@ -399,9 +391,9 @@ class GradientLevyMovement(MovementModel):
             velocity,
             range_,
             steps,
-            min_alpha,
-            max_alpha,
-            nu):
+            min_exponent,
+            max_exponent,
+            grad_weight):
         num, _ = random_positions.shape
         movement = np.zeros((num, steps, 2), dtype=float64)
         rangex, rangey = range_
@@ -410,7 +402,7 @@ class GradientLevyMovement(MovementModel):
         directions = np.stack((directions.real, directions.imag), -1)
         magnitudes = np.random.random(
                 (steps, num))
-        alpha_var = max_alpha - min_alpha
+        exponent_var = max_exponent - min_exponent
 
         for k in xrange(steps):
             movement[:, k, :] = random_positions
@@ -423,10 +415,10 @@ class GradientLevyMovement(MovementModel):
                 grad = gradient[int(index[0]), int(index[1])]
                 value = heatmap[int(index[0]), int(index[1])]
 
-                exponent = min_alpha + alpha_var * value
+                exponent = min_exponent + exponent_var * value
                 magnitude = (velocity * (exponent - 1)) / \
                     (math.pow((1 - magnitude), 1/exponent) * exponent)
-                direction = magnitude * (nu * grad + direction)
+                direction = magnitude * (grad_weight * grad + direction)
 
                 tmp1 = (
                         random_positions[j, 0] + direction[0],
@@ -449,21 +441,21 @@ class GradientBrownianMovement(MovementModel):
     name = 'Gradient Brownian Model'
 
     def __init__(self, parameters):
-        super(GradientBrownianMovement, self).__init__()
-        parameters = handle_parameters(parameters)
-
-        self.steps_per_day = parameters['STEPS_PER_DAY']
-        self.nu = parameters.get('NU', 1.0)
-        self.GBM_alpha = parameters.get('GBM_alpha', 1.0)
+        super(GradientBrownianMovement, self).__init__(parameters)
 
     def generate_movement(self, initial_positions, initial_conditions, days):
+        steps_per_day = self.parameters['global']['steps_per_day']
+        grad_weight = self.parameters['movement']['grad_weight']
+
         heatmap = normalize(initial_conditions.kde_approximation)
         gradient = np.stack(np.gradient(heatmap), -1)
         resolution = initial_conditions.home_range_resolution
-        velocity = (self.GBM_alpha * initial_conditions.velocity /
-                    float(self.steps_per_day))
         range_ = initial_conditions.range
-        steps = days * self.steps_per_day
+        base_vel = home_range_to_velocity(
+                initial_conditions.home_range, parameters=self.parameters)
+
+        velocity = base_vel / steps_per_day
+        steps = days * steps_per_day
 
         mov = self._movement(
                 gradient,
@@ -473,7 +465,7 @@ class GradientBrownianMovement(MovementModel):
                 velocity,
                 range_,
                 steps,
-                self.nu)
+                grad_weight)
         return mov
 
     @staticmethod
@@ -496,7 +488,7 @@ class GradientBrownianMovement(MovementModel):
             velocity,
             range_,
             steps,
-            nu):
+            grad_weight):
         num, _ = random_positions.shape
         movement = np.zeros((num, steps, 2), dtype=float64)
         rangex, rangey = range_
@@ -513,7 +505,7 @@ class GradientBrownianMovement(MovementModel):
                 value = heatmap[int(index[0]), int(index[1])]
 
                 new_direction = velocity * (
-                    (1 - value) * nu * grad + value * direction)
+                    (1 - value) * grad_weight * grad + value * direction)
 
                 tmp1 = (
                         random_positions[j, 0] + new_direction[0],
@@ -555,22 +547,15 @@ class MovementData(object):
             self,
             initial_conditions,
             movement_data,
-            movement_model,
-            parameters):
-
-        if parameters is None:
-            parameters = initial_conditions.parameters
-        else:
-            parameters = handle_parameters(parameters)
-        self.parameters = parameters
+            movement_model):
 
         self.initial_conditions = initial_conditions
-        self.velocity = initial_conditions.velocity
         self.movement_model = movement_model
         self.data = movement_data
 
         self.num_experiments, self.num, self.steps, _ = movement_data.shape
-        self.days = self.steps / parameters['STEPS_PER_DAY']
+        steps_per_day = movement_model.parameters['global']['steps_per_day']
+        self.days = self.steps / steps_per_day
 
     @classmethod
     def simulate(
@@ -581,23 +566,24 @@ class MovementData(object):
             num_experiments=1,
             parameters=None,
             movement_model='variable_levy'):
-        parameters = handle_parameters(parameters)
+
+        movement_model = make_movement_model(movement_model, parameters)
+        params = movement_model.parameters
 
         if days is None:
-            days = parameters['DAYS']
+            days = params['global']['days']
 
         if num is None:
             occupancy = initial_conditions.occupancy
             home_range = initial_conditions.home_range
             rangex, rangey = initial_conditions.range
             dens = density(
-                    occupancy, home_range, parameters=parameters)
+                    occupancy, home_range, parameters=params['density'])
             num = int(rangex * rangey * dens)
 
-        movement_model = make_movement_model(movement_model, parameters)
-
         num_ = num * num_experiments
-        steps = days * movement_model.steps_per_day
+        steps_per_day = params['global']['steps_per_day']
+        steps = days * steps_per_day
         initial_positions = initial_conditions.sample(num_)
         movement_data = movement_model.generate_movement(
             initial_positions, initial_conditions, days).reshape(
@@ -606,8 +592,7 @@ class MovementData(object):
         return cls(
             initial_conditions,
             movement_data,
-            movement_model,
-            parameters)
+            movement_model)
 
     def plot(
             self,
@@ -631,13 +616,8 @@ class MovementData(object):
         if ax is None:
             fig, ax = plt.subplots(figsize=(10, 10))
 
-        initial_conditions_options = [
-            opt for opt in include
-            if opt in initial_conditions.PLOT_OPTIONS]
-
-        if len(initial_conditions_options) != 0:
-            ax = self.initial_conditions.plot(
-                include=initial_conditions_options, ax=ax, **kwargs)
+        self.initial_conditions.plot(
+            include=include, ax=ax, **kwargs)
 
         if 'trajectories' in include:
 
@@ -668,3 +648,39 @@ class MovementData(object):
         ax.set_yticks(yticks)
 
         return ax
+
+
+class MovementAnalyzer(object):
+    def __init__(self, mov):
+        self.movement_data = mov
+        self.velocities, self.bearings, self.turn_angles = self.analyze()
+
+    @property
+    def mean_velocity(self):
+        return self.velocities.mean(axis=1).mean()
+
+    def analyze(self):
+        mov = self.movement_data.movement_model
+        steps_per_day = mov.parameters['global']['steps_per_day']
+        num_experiments, num, steps, _ = self.movement_data.data.shape
+        data = self.movement_data.data.reshape([-1, steps, 2])
+
+        directions = (data[:, 1:, :] - data[:, :-1, :])
+        complex_directions = directions[:, :, 0] + 1j * directions[:, :, 1]
+        velocities = steps_per_day * np.abs(complex_directions)
+        bearings = np.angle(complex_directions)
+        turn_angles = np.angle(complex_directions[:, 1:] /
+                               complex_directions[:, :-1])
+        return velocities, bearings, turn_angles
+
+    def plot_velocities(self, num_individual=0, ax=None, bins=20):
+        import matplotlib.pyplot as plt
+        if ax is None:
+            fig, ax = plt.subplots()
+
+        if num_individual == 'all':
+            velocities = self.velocities.ravel()
+        else:
+            velocities = self.velocities[num_individual]
+
+        plt.hist(velocities, bins=bins)
