@@ -89,6 +89,7 @@ class MovementData(object):
             velocity = home_range_to_velocity(
                 home_range,
                 parameters=parameters)
+        velocity = velocity * parameters['velocity_mod']
 
         if num is None:
             if occupancy is None:
@@ -114,7 +115,7 @@ class MovementData(object):
             initial_positions,
             initial_conditions,
             days,
-            velocity=velocity).reshape(
+            velocity).reshape(
                 [num_experiments, num, steps, 2])
 
         return cls(

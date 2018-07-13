@@ -41,5 +41,10 @@ class MovementModel(object):
         self.parameters = self.handle_parameters(parameters)
 
     @abstractmethod
-    def generate_movement(self, initial_position, initial_conditions):
+    def generate_movement(
+            self,
+            initial_position,
+            initial_conditions,
+            days,
+            velocity):
         pass

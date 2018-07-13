@@ -14,9 +14,6 @@ HR_DAYS = 365
 # MOVEMENT DATA DEFAULTS
 DAYS = 365
 
-# GLOBAL VELOCITY CONSTANTS
-HR2VEL_EXPONENT = 0.54
-
 # GLOBAL MOVEMENT CONSTANTS
 STEPS_PER_DAY = 4
 
@@ -40,12 +37,12 @@ GLOBAL_CONSTANTS = {
     'cone_range': CONE_RANGE,
     'cone_angle': CONE_ANGLE,
     'season': SEASON,
-    'hr2vel_exponent': HR2VEL_EXPONENT,
     'steps_per_day': STEPS_PER_DAY,
 }
 
 # CONSTANTS FOR MOVEMENT MODELS
 MOVEMENT_PARAMETERS = {
+    'velocity_mod': 1,
     'velocity': {
         'alpha': 35.0,
         'exponent': 0.54},
