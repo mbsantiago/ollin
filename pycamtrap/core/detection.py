@@ -13,7 +13,7 @@ class CameraConfiguration(object):
         self.directions = directions
 
         if range is None:
-            range = parameters['RANGE']
+            range = parameters['range']
 
         if isinstance(range, (int, float)):
             range = np.array([range, range])
@@ -23,8 +23,8 @@ class CameraConfiguration(object):
             range = np.array(range)
         self.range = range.astype(np.float64)
 
-        self.cone_angle = parameters['CONE_ANGLE']
-        self.cone_range = parameters['CONE_RANGE']
+        self.cone_angle = parameters['cone_angle']
+        self.cone_range = parameters['cone_range']
         self.num_cams = len(positions)
 
     def plot(
@@ -70,7 +70,7 @@ class CameraConfiguration(object):
         parameters = handle_global_constants(parameters)
 
         if range is None:
-            range = parameters['RANGE']
+            range = parameters['range']
 
         if isinstance(range, (int, float)):
             range = np.array([range, range])
@@ -97,7 +97,7 @@ class CameraConfiguration(object):
         parameters = handle_parameters(parameters)
 
         if range is None:
-            range = parameters['RANGE']
+            range = parameters['range']
 
         if isinstance(range, (int, float)):
             range = np.array([range, range])

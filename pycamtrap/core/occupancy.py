@@ -9,9 +9,8 @@ class Occupancy(object):
         self.movement_data = movement_data
         self.steps = movement_data.steps
         self.num_experiments = movement_data.num_experiments
-        self.resolution = occupancy_resolution(
-            movement_data.initial_conditions.home_range)
 
+        self.resolution = occupancy_resolution(movement_data.home_range)
         self.grid = make_grid(
             self.movement_data,
             self.resolution)

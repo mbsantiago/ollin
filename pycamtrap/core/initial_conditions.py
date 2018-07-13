@@ -15,8 +15,8 @@ from occupancy import _make_grid as oc_grid
 class InitialCondition(object):
     def __init__(
             self,
-            occupancy,
-            home_range,
+            niche_size,
+            resolution=None,
             range=None,
             kde_points=None,
             parameters=None):
@@ -35,11 +35,10 @@ class InitialCondition(object):
             range = np.array(range)
         self.range = range.astype(np.float64)
 
-        self.occupancy = occupancy
-        self.home_range = home_range
-
-        self.home_range_resolution = home_range_resolution(
-            self.home_range, parameters=parameters)
+        self.niche_size = niche_size
+        if resolution is None:
+            resolution = parameters['resolution']
+        self.resolution = resolution
 
         if kde_points is None:
             kde_points, n_clusters = self.make_cluster_points()
@@ -54,8 +53,8 @@ class InitialCondition(object):
         kde = make_kde(
             self.kde_points,
             self.range,
-            self.occupancy,
-            resolution=self.home_range_resolution,
+            self.niche_size,
+            resolution=self.resolution,
             parameters=self.parameters)
         return kde
 
@@ -141,7 +140,12 @@ class InitialCondition(object):
             parameters=parameters)
         return init
 
-    def plot(self, include=None, ax=None, niche_cmap='Reds'):
+    def plot(
+            self,
+            include=None,
+            figsize=(10, 10),
+            ax=None,
+            niche_cmap='Reds'):
         import matplotlib.pyplot as plt  # pylint: disable=import-error
 
         if include is None:
@@ -151,7 +155,7 @@ class InitialCondition(object):
                     'rectangle']
 
         if ax is None:
-            fig, ax = plt.subplots(figsize=(10, 10))
+            fig, ax = plt.subplots(figsize=figsize)
 
         if 'rectangle' in include:
             rect = plt.Rectangle(
@@ -235,7 +239,7 @@ def occupation_space_from_approximation(aprox):
 def make_kde(
         points,
         range,
-        t_occupancy,
+        niche_size,
         resolution=1.0,
         epsilon=0.05,
         parameters=None):
@@ -253,10 +257,10 @@ def make_kde(
         occ, kde_approx = calculate_occupancy(
             kde, range, resolution=resolution)
 
-        err = abs(occ - t_occupancy)
+        err = abs(occ - niche_size)
         if err < epsilon:
             break
-        elif occ < t_occupancy:
+        elif occ < niche_size:
             min_bw = mid_bw
             mid_bw = (max_bw + min_bw) / 2
             kde.set_bandwidth(mid_bw)
