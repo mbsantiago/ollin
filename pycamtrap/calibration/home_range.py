@@ -8,7 +8,8 @@ import pycamtrap as pc
 TRIALS_PER_WORLD = 1000
 NUM_WORLDS = 10
 VELOCITIES = [0.1, 0.3, 0.5, 0.8, 1.0, 1.4]
-OCCUPANCIES = np.linspace(0.2, 0.9, 4)
+NICHE_SIZES = np.linspace(0.2, 0.9, 4)
+RANGE = 20
 
 
 class HomeRangeCalibrator(object):
@@ -16,32 +17,38 @@ class HomeRangeCalibrator(object):
             self,
             movement_model,
             velocities=VELOCITIES,
-            occupancies=OCCUPANCIES,
+            niche_sizes=NICHE_SIZES,
             trials_per_world=TRIALS_PER_WORLD,
-            num_worlds=NUM_WORLDS):
+            num_worlds=NUM_WORLDS,
+            range=RANGE):
 
         self.movement_model = movement_model
         self.velocities = velocities
-        self.occupancies = occupancies
+        self.niche_sizes = niche_sizes
         self.trials_per_world = TRIALS_PER_WORLD
         self.num_worlds = NUM_WORLDS
+        self.range = range
 
         self.hr_info = self.calculate_hr_info()
 
     def calculate_hr_info(self):
         n_vel = len(self.velocities)
-        n_oc = len(self.occupancies)
+        n_nsz = len(self.niche_sizes)
+        num = self.trials_per_world
+        mov = self.movement_model
+
         all_info = np.zeros(
-            [n_vel, n_oc, self.num_worlds, self.trials_per_world])
+            [n_vel, n_nsz, self.num_worlds, self.trials_per_world])
         arguments = [
-            (self.movement_model, (i, vel), (j, occ), k)
-            for i, vel in enumerate(self.velocities)
-            for j, occ in enumerate(self.occupancies)
+            Info(mov, vel, nsz, num, self.range)
+            for vel in self.velocities
+            for nsz in self.niche_sizes
             for k in xrange(self.num_worlds)]
 
+        print('Simulating {} scenarios'.format(len(arguments)))
         pool = Pool()
         try:
-            results = pool.map(get_single_home_range_info, arguments)
+            results = pool.map(get_single_hr_info, arguments)
             pool.close()
             pool.join()
         except KeyboardInterrupt:
@@ -49,8 +56,13 @@ class HomeRangeCalibrator(object):
             sys.exit()
             quit()
 
-        for arg, res in zip(arguments, results):
-            _, (i, vel), (j, occ), k = arg
+        arguments = [
+                (i, j, k)
+                for i in xrange(n_vel)
+                for j in xrange(n_nsz)
+                for k in xrange(self.num_worlds)]
+
+        for (i, j, k), res in zip(arguments, results):
             all_info[i, j, k, :] = res
 
         return all_info
@@ -62,8 +74,8 @@ class HomeRangeCalibrator(object):
             fig, ax = plt.subplots(figsize=figsize)
         cmap = get_cmap(cmap)
         max_hrange = self.hr_info.max()
-        for n, oc in enumerate(self.occupancies):
-            color = cmap(float(n) / len(self.occupancies))
+        for n, oc in enumerate(self.niche_sizes):
+            color = cmap(float(n) / len(self.niche_sizes))
             data = self.hr_info[:, n, :, :]
             mean = data.mean(axis=(1, 2))
             std = data.std(axis=(1, 2))
@@ -72,7 +84,7 @@ class HomeRangeCalibrator(object):
                 self.velocities,
                 mean,
                 c=color,
-                label='Occupancy: {}'.format(oc))
+                label='Niche size: {}'.format(oc))
             ax.fill_between(
                 self.velocities,
                 mean - std,
@@ -82,20 +94,44 @@ class HomeRangeCalibrator(object):
                 edgecolor='white')
         ax.set_yticks(np.linspace(0, max_hrange, 20))
         ax.set_xticks(self.velocities)
+        ax.set_xlabel('Velocity (Km/day)')
+        ax.set_ylabel('Home range (Km^2)')
+        title = 'Home Range Calibration\n{}'
+        title = title.format(self.movement_model.name)
+        ax.set_title(title)
         ax.legend()
         return ax
 
 
-def get_single_home_range_info(argument):
-    mov_model, (i, vel), (j, occ), _ = argument
-    init = pc.InitialCondition(
-        occ,
-        velocity=vel)
+class Info(object):
+    __slots__ = [
+        'movement_model',
+        'velocity',
+        'niche_size',
+        'num',
+        'range']
+
+    def __init__(
+            self,
+            movement_model,
+            velocity,
+            niche_size,
+            num,
+            range_):
+        self.movement_model = movement_model
+        self.velocity = velocity
+        self.niche_size = niche_size
+        self.num = num
+        self.range = range_
+
+
+def get_single_hr_info(info):
+    init = pc.InitialCondition(info.niche_size, range=info.range)
     mov = pc.MovementData.simulate(
         init,
-        num=TRIALS_PER_WORLD,
-        velocity=vel,
-        days=mov_model.parameters['hr_days'],
-        movement_model=mov_model)
+        num=info.num,
+        velocity=info.velocity,
+        days=info.movement_model.parameters['hr_days'],
+        movement_model=info.movement_model)
     hr = pc.HomeRange(mov)
     return hr.home_ranges

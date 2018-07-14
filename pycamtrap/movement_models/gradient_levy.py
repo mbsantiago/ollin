@@ -9,6 +9,7 @@ from pycamtrap.core.utils import normalize
 class Model(MovementModel):
     name = 'Gradient Levy Model'
     default_parameters = {
+        'velocity_mod': 1.55,
         'velocity': {
             'alpha': 35.0,
             'exponent': 0.54},
@@ -19,7 +20,7 @@ class Model(MovementModel):
         'movement': {
             'min_pareto': 1.1,
             'max_pareto': 1.9,
-            'grad_weight': 2.0},
+            'grad_weight': 8.0},
     }
 
     def __init__(self, parameters):
@@ -43,32 +44,32 @@ class Model(MovementModel):
         steps = days * steps_per_day
 
         mov = self._movement(
-                gradient,
-                heatmap,
-                initial_positions,
-                resolution,
-                velocity,
-                range_,
-                steps,
-                min_exponent,
-                max_exponent,
-                grad_weight)
+            gradient,
+            heatmap,
+            initial_positions,
+            resolution,
+            velocity,
+            range_,
+            steps,
+            min_exponent,
+            max_exponent,
+            grad_weight)
         return mov
 
     @staticmethod
     @jit(
-            float64[:, :, :](
-                float64[:, :, :],
-                float64[:, :],
-                float64[:, :],
-                float64,
-                float64,
-                float64[:],
-                int64,
-                float64,
-                float64,
-                float64),
-            nopython=True)
+        float64[:, :, :](
+            float64[:, :, :],
+            float64[:, :],
+            float64[:, :],
+            float64,
+            float64,
+            float64[:],
+            int64,
+            float64,
+            float64,
+            float64),
+        nopython=True)
     def _movement(
             gradient,
             heatmap,
@@ -83,12 +84,10 @@ class Model(MovementModel):
         num, _ = random_positions.shape
         movement = np.zeros((num, steps, 2), dtype=float64)
         rangex, rangey = range_
-        directions = np.exp(1j * np.random.uniform(
-            0, 2 * np.pi, size=(steps, num)))
-        directions = np.stack((directions.real, directions.imag), -1)
-        magnitudes = np.random.random(
-                (steps, num))
+        directions = np.random.uniform(0, 1, size=(steps, num))
+        magnitudes = np.random.random((steps, num))
         exponent_var = max_exponent - min_exponent
+        gradient = gradient[:, :, 0] + 1j * gradient[:, :, 1]
 
         for k in xrange(steps):
             movement[:, k, :] = random_positions
@@ -96,19 +95,23 @@ class Model(MovementModel):
                 direction = directions[k, j]
                 magnitude = magnitudes[k, j]
                 index = (
-                        random_positions[j, 0] // resolution,
-                        random_positions[j, 1] // resolution)
+                    random_positions[j, 0] // resolution,
+                    random_positions[j, 1] // resolution)
                 grad = gradient[int(index[0]), int(index[1])]
                 value = heatmap[int(index[0]), int(index[1])]
 
                 exponent = min_exponent + exponent_var * value
                 magnitude = (velocity * (exponent - 1)) / \
                             (math.pow((1 - magnitude), 1/exponent) * exponent)
-                direction = magnitude * (grad_weight * grad + direction)
+                new_angle = (np.angle(grad) +
+                             direction / (grad_weight * np.abs(grad) + 1e-10))
+                new_direction = (
+                    magnitude * math.cos(new_angle),
+                    magnitude * math.sin(new_angle))
 
                 tmp1 = (
-                        random_positions[j, 0] + direction[0],
-                        random_positions[j, 1] + direction[1])
+                    random_positions[j, 0] + new_direction[0],
+                    random_positions[j, 1] + new_direction[1])
                 tmp2 = (tmp1[0] % (2 * rangex), tmp1[1] % (2 * rangey))
 
                 if tmp2[0] < rangex:

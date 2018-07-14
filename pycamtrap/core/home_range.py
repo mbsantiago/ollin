@@ -1,6 +1,8 @@
 # pylint: disable=unbalanced-tuple-unpacking
 import numpy as np  # pylint: disable=import-error
 
+from .utils import home_range_resolution
+
 
 class HomeRange(object):
     def __init__(self, movement_data):
@@ -14,7 +16,7 @@ class HomeRange(object):
         num_experiments, num, steps, _ = mov_data.data.shape
         array = mov_data.data.reshape([-1, steps, 2])
         range_ = mov_data.initial_conditions.range
-        resolution = mov_data.initial_conditions.home_range_resolution
+        resolution = home_range_resolution(mov_data.velocity)
         grid = _make_grid(array, range_, resolution)
         return grid
 

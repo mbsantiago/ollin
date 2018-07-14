@@ -8,6 +8,7 @@ from ..core.utils import normalize
 class Model(MovementModel):
     name = 'Variable Brownian Model'
     default_parameters = {
+        'velocity_mod': 0.97,
         'velocity': {
             'alpha': 35.0,
             'exponent': 0.54},
@@ -37,26 +38,26 @@ class Model(MovementModel):
         steps = days * steps_per_day
 
         mov = self._movement(
-                heatmap,
-                initial_positions,
-                resolution,
-                velocity,
-                range_,
-                steps,
-                niche_weight)
+            heatmap,
+            initial_positions,
+            resolution,
+            velocity,
+            range_,
+            steps,
+            niche_weight)
         return mov
 
     @staticmethod
     @jit(
-            float64[:, :, :](
-                float64[:, :],
-                float64[:, :],
-                float64,
-                float64,
-                float64[:],
-                int64,
-                float64),
-            nopython=True)
+        float64[:, :, :](
+            float64[:, :],
+            float64[:, :],
+            float64,
+            float64,
+            float64[:],
+            int64,
+            float64),
+        nopython=True)
     def _movement(
             heatmap,
             random_positions,
@@ -70,20 +71,20 @@ class Model(MovementModel):
         sigma = velocity / 1.2533141373155003
         rangex, rangey = range_
         directions = np.random.normal(
-                0, sigma, size=(steps, num, 2))
+            0, sigma, size=(steps, num, 2))
 
         for k in xrange(steps):
             movement[:, k, :] = random_positions
             for j in xrange(num):
                 direction = directions[k, j]
                 index = (
-                        random_positions[j, 0] // resolution,
-                        random_positions[j, 1] // resolution)
+                    random_positions[j, 0] // resolution,
+                    random_positions[j, 1] // resolution)
                 value = heatmap[int(index[0]), int(index[1])]
-                direction *= 1 + niche_weight * (1 / (2 * value + 0.1))
+                direction *= 1 + niche_weight * (0.5 - value)
                 tmp1 = (
-                        random_positions[j, 0] + direction[0],
-                        random_positions[j, 1] + direction[1])
+                    random_positions[j, 0] + direction[0],
+                    random_positions[j, 1] + direction[1])
                 tmp2 = (tmp1[0] % (2 * rangex), tmp1[1] % (2 * rangey))
 
                 if tmp2[0] < rangex:

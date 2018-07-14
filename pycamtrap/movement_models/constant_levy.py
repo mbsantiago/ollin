@@ -8,6 +8,7 @@ from .basemodel import MovementModel
 class Model(MovementModel):
     name = 'Constant Levy Model'
     default_parameters = {
+        'velocity_mod': 1.05,
         'velocity': {
             'alpha': 35.0,
             'exponent': 0.54},
@@ -35,22 +36,22 @@ class Model(MovementModel):
         steps = days * steps_per_day
 
         mov = self._movement(
-                initial_positions,
-                velocity,
-                range_,
-                steps,
-                exponent)
+            initial_positions,
+            velocity,
+            range_,
+            steps,
+            exponent)
         return mov
 
     @staticmethod
     @jit(
-            float64[:, :, :](
-                float64[:, :],
-                float64,
-                float64[:],
-                int64,
-                float64),
-            nopython=True)
+        float64[:, :, :](
+            float64[:, :],
+            float64,
+            float64[:],
+            int64,
+            float64),
+        nopython=True)
     def _movement(
             random_positions,
             velocity,
@@ -70,8 +71,8 @@ class Model(MovementModel):
                     (math.pow((1 - np.random.rand()), 1/exponent) * exponent)
                 direction = (magnitude * heading[0], magnitude * heading[1])
                 tmp1 = (
-                        random_positions[j, 0] + direction[0],
-                        random_positions[j, 1] + direction[1])
+                    random_positions[j, 0] + direction[0],
+                    random_positions[j, 1] + direction[1])
                 tmp2 = (tmp1[0] % (2 * rangex), tmp1[1] % (2 * rangey))
                 if tmp2[0] < rangex:
                     random_positions[j, 0] = tmp2[0] % rangex

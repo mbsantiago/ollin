@@ -5,38 +5,35 @@ import os
 
 import numpy as np
 from cycler import cycler
+try:
+    from functools import lru_cache
+except ImportError:
+    from backports.functools_lru_cache import lru_cache
 
 from utils import density, home_range_to_velocity
 from ..movement_models.basemodel import MovementModel
 
 
-def load_movement_model(model, parameters=None, path=None):
-    if path is None:
-        model_path = os.path.dirname(
-            os.path.dirname(os.path.abspath(__file__)))
-        model_path = os.path.join(
-            model_path, 'movement_models', '{}.py'.format(model))
-    else:
-        model_path = os.path.join(path, '{}.py'.format(model))
+@lru_cache()
+def load_movement_model(model):
+    model_path = os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__)))
+    model_path = os.path.join(
+        model_path, 'movement_models', '{}.py'.format(model))
 
     if os.path.exists(model_path):
         try:
-            if path is None:
-                cls = import_module(
-                    'pycamtrap.movement_models.{}'.format(model)).Model
-            else:
-                # TODO
-                msg = 'Custom loads are not implemented yet'
-                raise NotImplementedError(msg)
-            model = cls(parameters)
-            return model
+            cls = import_module(
+                'pycamtrap.movement_models.{}'.format(model)).Model
+            return cls
         except Exception as e:
             print('Unexpected exception occured while loading model file')
             raise e
-    else:
-        msg = 'Model file ({}) not found at ({})'
-        msg = msg.format(model + '.py', path)
-        raise IOError(msg)
+
+
+def get_movement_model(model, parameters=None):
+    cls = load_movement_model(model)
+    return cls(parameters)
 
 
 class MovementData(object):
@@ -77,9 +74,9 @@ class MovementData(object):
             movement_model='variable_levy'):
 
         if not isinstance(movement_model, MovementModel):
-            movement_model = load_movement_model(
-                    movement_model,
-                    parameters=parameters)
+            movement_model = get_movement_model(
+                movement_model,
+                parameters=parameters)
         parameters = movement_model.parameters
 
         if velocity is None:
@@ -89,7 +86,7 @@ class MovementData(object):
             velocity = home_range_to_velocity(
                 home_range,
                 parameters=parameters)
-        velocity = velocity * parameters['velocity_mod']
+        velocity = velocity
 
         if num is None:
             if occupancy is None:
@@ -101,7 +98,7 @@ class MovementData(object):
                 msg += ' must be provided'
                 raise ValueError(msg)
             dens = density(
-                    occupancy, home_range, parameters=parameters['density'])
+                occupancy, home_range, parameters=parameters['density'])
             num = int(rangex * rangey * dens)
 
         if days is None:
@@ -115,7 +112,7 @@ class MovementData(object):
             initial_positions,
             initial_conditions,
             days,
-            velocity).reshape(
+            velocity * parameters['velocity_mod']).reshape(
                 [num_experiments, num, steps, 2])
 
         return cls(
@@ -175,9 +172,9 @@ class MovementData(object):
                 xcoord, ycoord = zip(*trajectory)
                 ax.plot(xcoord, ycoord)
 
-        range = self.initial_conditions.range
-        xticks = np.linspace(0, range[0], 2)
-        yticks = np.linspace(0, range[1], 2)
+        range_ = self.initial_conditions.range
+        xticks = np.linspace(0, range_[0], 2)
+        yticks = np.linspace(0, range_[1], 2)
         ax.set_xticks(xticks)
         ax.set_yticks(yticks)
 

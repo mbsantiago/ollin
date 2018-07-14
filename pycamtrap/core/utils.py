@@ -37,5 +37,5 @@ def density(occupancy, home_range, parameters=None):
     return density
 
 
-def home_range_resolution(home_range, parameters=None):
-    return np.sqrt(home_range) / 10.0
+def home_range_resolution(velocity, parameters=None):
+    return velocity
