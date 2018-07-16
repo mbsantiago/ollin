@@ -5,21 +5,35 @@ from utils import occupancy_resolution
 
 
 class Occupancy(object):
-    def __init__(self, movement_data):
+    def __init__(self, movement_data, grid=None, resolution=None):
         self.movement_data = movement_data
         self.steps = movement_data.steps
         self.num_experiments = movement_data.num_experiments
 
-        self.resolution = occupancy_resolution(movement_data.home_range)
-        self.grid = make_grid(
-            self.movement_data,
-            self.resolution)
+        if resolution is None:
+            resolution = occupancy_resolution(movement_data.home_range)
+        self.resolution = resolution
 
-        self.occupancy_nums = np.sum(self.grid, axis=1)
-        self.occupancies = np.mean(
-            self.occupancy_nums / float(self.steps),
+        if grid is None:
+            grid = make_grid(
+                self.movement_data,
+                self.resolution)
+        self.grid = grid
+
+    def get_occupancy_nums(self):
+        occupancy_nums = np.sum(self.grid, axis=1)
+        return occupancy_nums
+
+    def get_occupancies(self):
+        occupancy_nums = self.get_occupancy_nums()
+        occupancies = np.mean(
+            occupancy_nums / float(self.steps),
             axis=(1, 2))
-        self.mean_occupancy = np.mean(self.occupancies)
+        return occupancies
+
+    def get_mean_occupancy(self):
+        occupancies = self.get_occupancies()
+        return occupancies.mean()
 
     def plot(
             self,
@@ -38,10 +52,11 @@ class Occupancy(object):
                 'rectangle', 'niche', 'occupancy', 'occupancy_contour']
 
         if 'occupancy' in include:
+            occupancy_nums = self.get_occupancy_nums()
             if isinstance(show, int):
-                grid = self.occupancy_nums[show]
+                grid = occupancy_nums[show]
             elif show == 'mean':
-                grid = np.mean(self.occupancy_nums, axis=0)
+                grid = np.mean(occupancy_nums, axis=0)
 
             grid = grid / float(self.steps)
 

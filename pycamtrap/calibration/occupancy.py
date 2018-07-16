@@ -9,10 +9,11 @@ import pycamtrap as pc
 
 RANGE = 20
 TRIALS_PER_WORLD = 100
+MAX_INDIVIDUALS = 10000
 NUM_WORLDS = 10
 HOME_RANGES = np.linspace(0.1, 3, 10)
 NICHE_SIZES = np.linspace(0.3, 0.9, 6)
-NUMS = np.linspace(10, 10000, 10, dtype=np.int64)
+NUMS = np.linspace(10, 5000, 10, dtype=np.int64)
 
 
 class OccupancyCalibrator(object):
@@ -24,7 +25,8 @@ class OccupancyCalibrator(object):
             nums=NUMS,
             trials_per_world=TRIALS_PER_WORLD,
             num_worlds=NUM_WORLDS,
-            range=RANGE):
+            range=RANGE,
+            max_individuals=MAX_INDIVIDUALS):
 
         self.movement_model = movement_model
         self.home_ranges = home_ranges
@@ -33,6 +35,7 @@ class OccupancyCalibrator(object):
         self.trials_per_world = trials_per_world
         self.num_worlds = num_worlds
         self.range = range
+        self.max_individuals = max_individuals
 
         self.oc_info = self.calculate_oc_info()
 
@@ -43,14 +46,14 @@ class OccupancyCalibrator(object):
         tpw = self.trials_per_world
         nw = self.num_worlds
         mov = self.movement_model
+        mx_ind = self.max_individuals
 
         all_info = np.zeros(
-                [n_hr, n_nsz, n_num, nw, tpw])
+                [n_hr, n_nsz, nw, n_num, tpw])
         arguments = [
-                Info(mov, hr, nsz, num, tpw, self.range)
+                Info(mov, hr, nsz, self.nums, tpw, self.range, mx_ind)
                 for hr in self.home_ranges
                 for nsz in self.niche_sizes
-                for num in self.nums
                 for k in xrange(self.num_worlds)]
 
         nargs = len(arguments)
@@ -68,14 +71,13 @@ class OccupancyCalibrator(object):
             quit()
 
         arguments = [
-                (i, j, l, k)
+                (i, j, k)
                 for i in xrange(n_hr)
                 for j in xrange(n_nsz)
-                for l in xrange(n_num)
                 for k in xrange(self.num_worlds)]
 
-        for (i, j, l, k), res in zip(arguments, results):
-            all_info[i, j, l, k, :] = res
+        for (i, j, k), res in zip(arguments, results):
+            all_info[i, j, k, :, :] = res
 
         return all_info
 
@@ -91,33 +93,35 @@ class OccupancyCalibrator(object):
         nrows = int(np.ceil(n_hr / ncols))
 
         for m, hr in enumerate(self.home_ranges):
-            nax = ax.subplot((nrows, ncols, m + 1))
+            nax = plt.subplot(nrows, ncols, m + 1)
             for n, nsz in enumerate(self.niche_sizes):
                 color = cmap(float(n) / len(self.niche_sizes))
-                data = self.velocity_info[m, n, :, :, :]
-                mean = data.mean(axis=(1, 2))
-                std = data.std(axis=(1, 2))
+                data = self.oc_info[m, n, :, :, :]
+                mean = data.mean(axis=(0, 2))
+                std = data.std(axis=(0, 2))
 
                 nax.plot(
-                        self.nums,
-                        mean,
-                        c=color,
-                        label='Niche Size: {}'.format(nsz))
+                    self.nums,
+                    mean,
+                    c=color,
+                    label='Niche Size: {}'.format(nsz))
                 nax.fill_between(
-                        self.nums,
-                        mean - std,
-                        mean + std,
-                        color=color,
-                        alpha=0.6,
-                        edgecolor='white')
+                    self.nums,
+                    mean - std,
+                    mean + std,
+                    color=color,
+                    alpha=0.6,
+                    edgecolor='white')
 
+            nax.set_ylim(0, 1)
             nax.set_xlabel('Num individuals (N)')
             nax.set_ylabel('Occupancy (%)')
+            nax.set_title('Home range: {} Km^2'.format(hr))
             nax.legend()
+        plt.tight_layout()
 
         msg = 'Occupancy Calibration\n{}'.format(self.movement_model.name)
         ax.set_title(msg)
-
         return ax
 
 
@@ -126,23 +130,26 @@ class Info(object):
         'movement_model',
         'home_range',
         'niche_size',
-        'num',
+        'nums',
         'trials',
-        'range']
+        'range',
+        'max_individuals']
 
     def __init__(
             self,
             movement_model,
             home_range,
             niche_size,
-            num,
+            nums,
             trials,
-            range_):
+            range_,
+            max_individuals):
 
         self.movement_model = movement_model
         self.home_range = home_range
         self.niche_size = niche_size
-        self.num = num
+        self.nums = nums
+        self.max_individuals = max_individuals
         self.trials = trials
         self.range = range_
 
@@ -151,10 +158,18 @@ def get_single_oc_info(info):
     init = pc.InitialCondition(info.niche_size, range=info.range)
     mov = pc.MovementData.simulate(
         init,
-        num=info.num,
+        num=info.max_individuals,
         home_range=info.home_range,
         days=info.movement_model.parameters['season'],
-        num_experiments=info.trials,
         movement_model=info.movement_model)
-    oc = pc.Occupancy(mov)
-    return oc.occupancies
+
+    n_nums = len(info.nums)
+    results = np.zeros([n_nums, info.trials])
+
+    for n, num in enumerate(info.nums):
+        for k in xrange(info.trials):
+            submov = mov.sample(num)
+            oc = pc.Occupancy(submov)
+            results[n, k] = oc.get_mean_occupancy()
+
+    return results

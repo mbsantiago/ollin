@@ -125,6 +125,90 @@ class MovementData(object):
             home_range=home_range,
             occupancy=occupancy)
 
+    def num_slice(self, key):
+        if not isinstance(key, (int, slice)):
+            if isinstance(key, (list, tuple)):
+                key = slice(*key)
+            else:
+                msg = 'Num slice only accepts (int/list/tuple/slice) as'
+                msg += ' arguments. {} given.'.format(type(key))
+                raise ValueError(msg)
+        data = self.data[:, key, :, :]
+        num = data.shape[1]
+
+        mov = MovementData(
+            self.initial_conditions,
+            data,
+            self.movement_model,
+            self.velocity,
+            num,
+            home_range=self.home_range,
+            occupancy=self.occupancy)
+        return mov
+
+    def sample(self, num, replace=False):
+        selection = np.random.choice(
+            np.arange(self.num),
+            size=num,
+            replace=replace)
+        data = self.data[:, selection, :, :]
+
+        mov = MovementData(
+            self.initial_conditions,
+            data,
+            self.movement_model,
+            self.velocity,
+            num,
+            home_range=self.home_range,
+            occupancy=self.occupancy)
+        return mov
+
+    def select(self, selection):
+        if isinstance(selection, (tuple, list)):
+            selection = np.array(selection)
+        num = selection.size
+        data = self.data[:, selection, :, :]
+
+        mov = MovementData(
+            self.initial_conditions,
+            data,
+            self.movement_model,
+            self.velocity,
+            num,
+            home_range=self.home_range,
+            occupancy=self.occupancy)
+        return mov
+
+    def time_slice(self, key):
+        if not isinstance(key, (int, slice)):
+            if isinstance(key, (list, tuple)):
+                key = slice(*key)
+            else:
+                msg = 'Time slice only accepts (int/list/tuple/slice) as'
+                msg += ' arguments. {} given.'.format(type(key))
+                raise ValueError(msg)
+
+        steps_per_day = self.movement_model.parameters['steps_per_day']
+        if isinstance(key, int):
+            key = steps_per_day * key
+        else:
+            start = None if key.start is None else key.start * steps_per_day
+            end = None if key.end is None else key.end * steps_per_day
+            step = None if key.step is None else key.step * steps_per_day
+            key = slice(start, end, step)
+
+        data = self.data[:, :, key, :]
+
+        mov = MovementData(
+                self.initial_conditions,
+                data,
+                self.movement_model,
+                self.velocity,
+                self.num,
+                home_range=self.home_range,
+                occupancy=self.occupancy)
+        return mov
+
     def plot(
             self,
             include=None,
