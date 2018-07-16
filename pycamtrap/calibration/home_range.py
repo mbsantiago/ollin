@@ -5,6 +5,9 @@ import sys
 import numpy as np
 import pycamtrap as pc
 
+from ..core.utils import (home_range_to_velocity,
+                          velocity_to_home_range)
+
 TRIALS_PER_WORLD = 1000
 NUM_WORLDS = 10
 VELOCITIES = [0.1, 0.3, 0.5, 0.8, 1.0, 1.4]
@@ -92,6 +95,15 @@ class HomeRangeCalibrator(object):
                 color=color,
                 alpha=0.6,
                 edgecolor='white')
+        target_hr = velocity_to_home_range(
+            np.array(self.velocities),
+            parameters=self.movement_model.parameters)
+        ax.plot(
+            self.velocities,
+            target_hr,
+            color='red',
+            label='target')
+
         ax.set_yticks(np.linspace(0, max_hrange, 20))
         ax.set_xticks(self.velocities)
         ax.set_xlabel('Velocity (Km/day)')
@@ -101,6 +113,33 @@ class HomeRangeCalibrator(object):
         ax.set_title(title)
         ax.legend()
         return ax
+
+    def fit(self):
+        from sklearn.linear_model import LinearRegression
+
+        exponents = np.zeros(len(self.niche_sizes))
+        alphas = np.zeros(len(self.niche_sizes))
+        for num, niche_size in enumerate(self.niche_sizes):
+            data = self.hr_info[:, num, :, :]
+            concat = []
+
+            for k, vel in enumerate(self.velocities):
+                hrdata = data[k, :, :].ravel()
+                hrdata = np.stack([vel * np.ones_like(hrdata), hrdata], -1)
+                concat.append(hrdata)
+
+            data = np.concatenate(concat, 0)
+            velocity, home_range = data.T
+            model = LinearRegression()
+            model.fit(np.log(home_range)[:, None], np.log(velocity)[:, None])
+            exponents[num] = model.coef_[0, 0]
+            alphas[num] = np.exp(model.intercept_[0])
+
+        fit = {
+            'niche_sizes': self.niche_sizes,
+            'alphas': alphas,
+            'exponents': exponents}
+        return fit
 
 
 class Info(object):

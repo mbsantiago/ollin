@@ -8,8 +8,10 @@ from ..core.utils import normalize
 class Model(MovementModel):
     name = 'Variable Brownian Model'
     default_parameters = {
-        'velocity_mod': 0.97,
         'velocity': {
+            'beta': 0.97,
+            'alpha': 0.0},
+        'home_range': {
             'alpha': 35.0,
             'exponent': 0.54},
         'density': {

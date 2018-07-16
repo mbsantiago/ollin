@@ -9,10 +9,12 @@ from ..core.utils import normalize
 class Model(MovementModel):
     name = 'Variable Levy Model'
     default_parameters = {
-        'velocity_mod': 6.0,
         'velocity': {
-            'alpha': 35.0,
-            'exponent': 0.54},
+            'beta': 7.9,
+            'alpha': -3.1},
+        'home_range': {
+            'alpha': 0.08363,
+            'exponent': 0.524},
         'density': {
             'alpha': 22.0,
             'hr_exp': 1.2,

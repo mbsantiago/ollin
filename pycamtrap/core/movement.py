@@ -10,7 +10,7 @@ try:
 except ImportError:
     from backports.functools_lru_cache import lru_cache
 
-from utils import density, home_range_to_velocity
+from .utils import density, home_range_to_velocity, velocity_modification
 from ..movement_models.basemodel import MovementModel
 
 
@@ -86,7 +86,6 @@ class MovementData(object):
             velocity = home_range_to_velocity(
                 home_range,
                 parameters=parameters)
-        velocity = velocity
 
         if num is None:
             if occupancy is None:
@@ -104,15 +103,17 @@ class MovementData(object):
         if days is None:
             days = parameters['days']
 
-        num_ = num * num_experiments
+        velocity_mod = velocity_modification(
+                initial_conditions.niche_size, parameters)
         steps_per_day = parameters['steps_per_day']
-        steps = days * steps_per_day
+        num_ = int(num * num_experiments)
+        steps = int(days * steps_per_day)
         initial_positions = initial_conditions.sample(num_)
         movement_data = movement_model.generate_movement(
             initial_positions,
             initial_conditions,
             days,
-            velocity * parameters['velocity_mod']).reshape(
+            velocity * velocity_mod).reshape(
                 [num_experiments, num, steps, 2])
 
         return cls(

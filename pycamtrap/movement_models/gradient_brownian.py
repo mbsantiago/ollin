@@ -9,8 +9,10 @@ from .basemodel import MovementModel
 class Model(MovementModel):
     name = 'Gradient Brownian Model'
     default_parameters = {
-        'velocity_mod': 0.92,
         'velocity': {
+            'beta': 0.92,
+            'alpha': 0.0},
+        'home_range': {
             'alpha': 35.0,
             'exponent': 0.54},
         'density': {

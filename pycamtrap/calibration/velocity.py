@@ -126,7 +126,18 @@ class VelocityCalibrator(object):
             model.fit(X[:, None], Y[:, None])
             coefficients[num] = model.coef_[0, 0]
 
-        return coefficients
+        model = LinearRegression()
+        model.fit(self.niche_sizes[:, None], coefficients[:, None])
+
+        alpha = model.coef_[0, 0]
+        beta = model.intercept_[0]
+
+        fit = {
+            'coefficients': coefficients,
+            'niche_sizes': self.niche_sizes,
+            'alpha': alpha,
+            'beta': beta}
+        return fit
 
 
 class Info(object):

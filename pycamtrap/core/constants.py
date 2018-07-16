@@ -42,8 +42,10 @@ GLOBAL_CONSTANTS = {
 
 # CONSTANTS FOR MOVEMENT MODELS
 MOVEMENT_PARAMETERS = {
-    'velocity_mod': 1,
     'velocity': {
+        'alpha': 0.0,
+        'beta': 1.0},
+    'home_range': {
         'alpha': 35.0,
         'exponent': 0.54},
     'density': {

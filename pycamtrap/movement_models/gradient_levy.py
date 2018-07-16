@@ -9,8 +9,10 @@ from pycamtrap.core.utils import normalize
 class Model(MovementModel):
     name = 'Gradient Levy Model'
     default_parameters = {
-        'velocity_mod': 1.55,
         'velocity': {
+            'beta': 1.55,
+            'alpha': 0.0},
+        'home_range': {
             'alpha': 35.0,
             'exponent': 0.54},
         'density': {

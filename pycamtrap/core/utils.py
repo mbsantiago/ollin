@@ -16,17 +16,15 @@ def occupancy_resolution(home_range, parameters=None):
 
 
 def home_range_to_velocity(home_range, parameters=None):
-    days = parameters['hr_days']
-    exponent = parameters['velocity']['exponent']
-    vel_mod = parameters['velocity']['alpha']
-    return vel_mod * np.power(home_range, exponent) / days
+    exponent = parameters['home_range']['exponent']
+    alpha = parameters['home_range']['alpha']
+    return alpha * np.power(home_range, exponent)
 
 
 def velocity_to_home_range(velocity, parameters=None):
-    days = parameters['hr_days']
-    exponent = parameters['velocity']['exponent']
-    vel_mod = parameters['velocity']['alpha']
-    return np.exponent(velocity * days / vel_mod, 1/exponent)
+    exponent = parameters['home_range']['exponent']
+    alpha = parameters['home_range']['alpha']
+    return np.power(velocity / alpha, 1 / exponent)
 
 
 def density(occupancy, home_range, parameters=None):
@@ -39,3 +37,9 @@ def density(occupancy, home_range, parameters=None):
 
 def home_range_resolution(velocity, parameters=None):
     return velocity
+
+
+def velocity_modification(niche_size, parameters):
+    alpha = parameters['velocity']['alpha']
+    beta = parameters['velocity']['beta']
+    return beta + alpha * niche_size

@@ -7,8 +7,10 @@ from .basemodel import MovementModel
 class Model(MovementModel):
     name = 'Constant Brownian Model'
     default_parameters = {
-        'velocity_mod': 1.05,
         'velocity': {
+            'beta': 1.05,
+            'alpha': 0},
+        'home_range': {
             'alpha': 35.0,
             'exponent': 0.54},
         'density': {
