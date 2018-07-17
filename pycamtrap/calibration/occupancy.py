@@ -141,6 +141,59 @@ class OccupancyCalibrator(object):
         ax.set_title(msg)
         return ax
 
+    def fit(self):
+        from sklearn.linear_model import LinearRegression
+        data = self.oc_info
+        nhrs, nnsz, nwrl, nnums, ntpw = data.shape
+
+        home_range_exponents = np.zeros([nnsz])
+        occupancy_exponents = np.zeros([nnsz])
+        proportionality_constants = np.zeros([nnsz])
+
+        area = self.range[0] * self.range[1]
+        density = self.nums / float(area)
+
+        for i, nsz in enumerate(self.niche_sizes):
+            X = []
+            Y = []
+            for j, hr in enumerate(self.home_ranges):
+                for k, dens in enumerate(density):
+                    oc_data = data[j, i, :, k, :].ravel()
+                    hr_data = hr * np.ones_like(oc_data)
+                    dens_data = dens * np.ones_like(oc_data)
+                    Y.append(dens_data)
+                    X.append(np.stack([hr_data, oc_data], -1))
+            X = np.concatenate(X, 0)
+            Y = np.concatenate(Y, 0)[:, None]
+
+            lrm = LinearRegression()
+            lrm.fit(np.log(X), np.log(Y))
+
+            home_range_exponents[i] = lrm.coef_[0, 0]
+            occupancy_exponents[i] = lrm.coef_[0, 1]
+            proportionality_constants[i] = lrm.intercept_[0]
+
+        lrm_occ = LinearRegression()
+        lrm_occ.fit(self.niche_sizes[:, None], occupancy_exponents[:, None])
+
+        occ_exp_a = lrm_occ.coef_[0, 0]
+        occ_exp_b = lrm_occ.intercept_[0]
+
+        lrm_prop = LinearRegression()
+        lrm_prop.fit(
+            self.niche_sizes[:, None], proportionality_constants[:, None])
+
+        alpha = lrm_prop.coef_[0, 0]
+        beta = lrm_prop.intercept_[0]
+
+        parameters = {
+            'hr_exp': home_range_exponents.mean(),
+            'alpha': alpha,
+            'beta': beta,
+            'occ_exp_a': occ_exp_a,
+            'occ_exp_b': occ_exp_b}
+        return parameters
+
 
 class Info(object):
     __slots__ = [
