@@ -38,7 +38,7 @@ def density(occupancy, home_range, niche_size, parameters=None):
     occ_exp = occ_exp_a * niche_size + occ_exp_b
     prop = np.exp(alpha * niche_size + beta)
 
-    density = prop * (occupancy**occ_exp) / (home_range)**hr_exp
+    density = prop * (occupancy**occ_exp) / (home_range**hr_exp)
     return density
 
 
@@ -52,7 +52,7 @@ def density_to_occupancy(density, home_range, niche_size, parameters=None):
     occ_exp = occ_exp_a * niche_size + occ_exp_b
     prop = np.exp(alpha * niche_size + beta)
 
-    occupancy = np.power(density * home_range**hr_exp / prop, 1 / occ_exp)
+    occupancy = np.power(density * (home_range**hr_exp) / prop, 1 / occ_exp)
     return occupancy
 
 

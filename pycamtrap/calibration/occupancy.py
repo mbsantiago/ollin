@@ -132,10 +132,10 @@ class OccupancyCalibrator(object):
                 nax.text(0.1, 0.8, 'HR={} Km^2\nNS={} (%)'.format(hr, nsz))
 
                 if m == ncols - 1:
-                    nax.set_xlabel('Niche Size={}'.format(nsz))
+                    nax.set_xlabel('NS={}'.format(nsz))
 
                 if n == 0:
-                    nax.set_ylabel('Home Range={}'.format(hr))
+                    nax.set_ylabel('HR={}'.format(hr))
 
                 if m < ncols - 1:
                     nax.xaxis.set_major_formatter(NullFormatter())
@@ -148,7 +148,7 @@ class OccupancyCalibrator(object):
         font = {'fontsize': 18}
         plt.figtext(0.4, 0.05, "Density (Km^-2)", fontdict=font)
         plt.figtext(0.035, 0.5, "Occupancy (%)", fontdict=font, rotation=90)
-        plt.figtext(0.38, 0.95, "Occupancy Calibration", fontdict=font)
+        plt.figtext(0.38, 0.92, "Occupancy Calibration", fontdict=font)
         return ax
 
     def fit(self):
@@ -179,15 +179,12 @@ class OccupancyCalibrator(object):
             lrm = LinearRegression()
             lrm.fit(np.log(X), np.log(Y))
 
-            print('log-log regression nsz={}'.format(nsz), lrm.coef_)
             home_range_exponents[i] = lrm.coef_[0]
             occupancy_exponents[i] = lrm.coef_[1]
             proportionality_constants[i] = lrm.intercept_
 
         lrm_occ = LinearRegression()
         lrm_occ.fit(self.niche_sizes[:, None], occupancy_exponents)
-        print('Occupancy exponents', occupancy_exponents)
-        print('Occupancy exponents fit', lrm_occ.coef_)
 
         occ_exp_a = lrm_occ.coef_[0]
         occ_exp_b = lrm_occ.intercept_
@@ -195,9 +192,6 @@ class OccupancyCalibrator(object):
         lrm_prop = LinearRegression()
         lrm_prop.fit(
             self.niche_sizes[:, None], proportionality_constants)
-
-        print('Proporcionality constants', proportionality_constants)
-        print('Proportionality constants fit', lrm_prop.coef_)
 
         alpha = lrm_prop.coef_[0]
         beta = lrm_prop.intercept_
