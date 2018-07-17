@@ -145,6 +145,8 @@ class OccupancyCalibrator(object):
                 counter += 1
 
         plt.subplots_adjust(wspace=0, hspace=0)
+        ax.text(0.3, 0.02, "Density (Km^-2)", fontdict={'fontsize': 18})
+        ax.text(0.04, 0.6, "Occupancy (%)", fontdict={'fontsize': 18}, rotation=90)
         return ax
 
     def fit(self):
