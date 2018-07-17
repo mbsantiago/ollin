@@ -86,7 +86,7 @@ class OccupancyCalibrator(object):
 
         return all_info
 
-    def plot(self, figsize=(10, 10), ax=None, w_target=True):
+    def plot(self, figsize=(10, 10), ax=None, w_target=True, logplot=False):
         import matplotlib.pyplot as plt
         from matplotlib.ticker import NullFormatter
 
@@ -107,6 +107,11 @@ class OccupancyCalibrator(object):
 
                 area = self.range[0] * self.range[1]
                 density = self.nums / area
+
+                if logplot:
+                    density = np.log(density)
+                    mean = np.log(mean)
+                    std = np.log(std)
 
                 nax.plot(
                     density,
