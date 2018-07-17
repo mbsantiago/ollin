@@ -6,6 +6,8 @@ import sys
 import numpy as np
 import pycamtrap as pc
 
+from ..core.utils import density_to_occupancy
+
 
 RANGE = 20
 TRIALS_PER_WORLD = 100
@@ -13,7 +15,7 @@ MAX_INDIVIDUALS = 10000
 NUM_WORLDS = 10
 HOME_RANGES = np.linspace(0.1, 3, 10)
 NICHE_SIZES = np.linspace(0.3, 0.9, 6)
-NUMS = np.linspace(10, 5000, 10, dtype=np.int64)
+NUMS = np.linspace(10, 1000, 6, dtype=np.int64)
 
 
 class OccupancyCalibrator(object):
@@ -34,8 +36,10 @@ class OccupancyCalibrator(object):
         self.nums = nums
         self.trials_per_world = trials_per_world
         self.num_worlds = num_worlds
-        self.range = range
         self.max_individuals = max_individuals
+        if isinstance(range, (int, float)):
+            range = (range, range)
+        self.range = range
 
         self.oc_info = self.calculate_oc_info()
 
@@ -100,21 +104,32 @@ class OccupancyCalibrator(object):
                 mean = data.mean(axis=(0, 2))
                 std = data.std(axis=(0, 2))
 
+                area = self.range[0] * self.range[1]
+                density = self.nums / area
+
                 nax.plot(
-                    self.nums,
+                    density,
                     mean,
                     c=color,
                     label='Niche Size: {}'.format(nsz))
                 nax.fill_between(
-                    self.nums,
+                    density,
                     mean - std,
                     mean + std,
                     color=color,
                     alpha=0.6,
                     edgecolor='white')
 
+                target = density_to_occupancy(
+                    density, hr, parameters=self.movement_model.parameters)
+                nax.plot(
+                    density,
+                    target,
+                    color='red',
+                    label='target')
+
             nax.set_ylim(0, 1)
-            nax.set_xlabel('Num individuals (N)')
+            nax.set_xlabel('Density (1/Km^2)')
             nax.set_ylabel('Occupancy (%)')
             nax.set_title('Home range: {} Km^2'.format(hr))
             nax.legend()

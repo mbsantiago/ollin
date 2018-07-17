@@ -1,4 +1,5 @@
 from __future__ import division
+
 import numpy as np
 
 
@@ -33,6 +34,14 @@ def density(occupancy, home_range, parameters=None):
     occ_exp = parameters['occ_exp']
     density = alpha * (occupancy**occ_exp) / (home_range)**hr_exp
     return density
+
+
+def density_to_occupancy(density, home_range, parameters=None):
+    alpha = parameters['alpha']
+    hr_exp = parameters['hr_exp']
+    occ_exp = parameters['occ_exp']
+    occupancy = np.power(density * home_range**hr_exp / alpha, 1 / occ_exp)
+    return occupancy
 
 
 def home_range_resolution(velocity, parameters=None):
