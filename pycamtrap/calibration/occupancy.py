@@ -53,7 +53,7 @@ class OccupancyCalibrator(object):
         mx_ind = self.max_individuals
 
         all_info = np.zeros(
-                [n_hr, n_nsz, nw, n_num, tpw])
+                [n_hr, n_nsz, n_num, nw, tpw])
         arguments = [
                 Info(mov, hr, nsz, self.nums, tpw, self.range, mx_ind)
                 for hr in self.home_ranges
@@ -82,7 +82,7 @@ class OccupancyCalibrator(object):
                 for k in xrange(self.num_worlds)]
 
         for (i, j, k), res in zip(arguments, results):
-            all_info[i, j, k, :, :] = res
+            all_info[i, j, :, k, :] = res
 
         return all_info
 
@@ -102,8 +102,8 @@ class OccupancyCalibrator(object):
             for n, nsz in enumerate(self.niche_sizes):
                 nax = plt.subplot(nrows, ncols, counter)
                 data = self.oc_info[m, n, :, :, :]
-                mean = data.mean(axis=(0, 2))
-                std = data.std(axis=(0, 2))
+                mean = data.mean(axis=(1, 2))
+                std = data.std(axis=(1, 2))
 
                 area = self.range[0] * self.range[1]
                 density = self.nums / area
@@ -143,11 +143,12 @@ class OccupancyCalibrator(object):
                     nax.yaxis.set_major_formatter(NullFormatter())
 
                 counter += 1
-
         plt.subplots_adjust(wspace=0, hspace=0)
-        plt.figtext(0.4, 0.03, "Density (Km^-2)", fontdict={'fontsize': 18})
-        plt.figtext(0.03, 0.5, "Occupancy (%)", fontdict={'fontsize': 18}, rotation=90)
-        plt.figtext(0.045, 1.01, "Occupancy Calibration", fontdict={'fontsize': 18})
+
+        font = {'fontsize': 18}
+        plt.figtext(0.4, 0.05, "Density (Km^-2)", fontdict=font)
+        plt.figtext(0.05, 0.5, "Occupancy (%)", fontdict=font, rotation=90)
+        plt.figtext(0.45, 1.01, "Occupancy Calibration", fontdict=font)
         return ax
 
     def fit(self):
@@ -167,7 +168,7 @@ class OccupancyCalibrator(object):
             Y = []
             for j, hr in enumerate(self.home_ranges):
                 for k, dens in enumerate(density):
-                    oc_data = data[j, i, :, k, :].ravel()
+                    oc_data = data[j, i, k, :, :].ravel()
                     hr_data = hr * np.ones_like(oc_data)
                     dens_data = dens * np.ones_like(oc_data)
                     Y.append(dens_data)
