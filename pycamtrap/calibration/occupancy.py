@@ -132,10 +132,10 @@ class OccupancyCalibrator(object):
                 nax.text(0.1, 0.8, 'HR={} Km^2\nNS={} (%)'.format(hr, nsz))
 
                 if m == ncols - 1:
-                    nax.set_ylabel('Home Range={}'.format(hr))
+                    nax.set_xlabel('Niche Size={}'.format(nsz))
 
                 if n == 0:
-                    nax.set_xlabel('Niche Size={}'.format(nsz))
+                    nax.set_ylabel('Home Range={}'.format(hr))
 
                 if m < ncols - 1:
                     nax.xaxis.set_major_formatter(NullFormatter())
