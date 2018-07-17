@@ -131,15 +131,15 @@ class OccupancyCalibrator(object):
                 nax.set_xlim(0, density.max())
                 nax.text(0.1, 0.8, 'HR={} Km^2\nNS={} (%)'.format(hr, nsz))
 
-                if m == 0:
+                if m == ncols - 1:
                     nax.set_ylabel('Home Range={}'.format(hr))
 
-                if n == nrows - 1:
+                if n == 0:
                     nax.set_xlabel('Niche Size={}'.format(nsz))
 
                 if m < ncols - 1:
                     nax.xaxis.set_major_formatter(NullFormatter())
-                if n < nrows - 1:
+                if n > 0:
                     nax.yaxis.set_major_formatter(NullFormatter())
 
                 counter += 1
