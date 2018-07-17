@@ -86,7 +86,7 @@ class OccupancyCalibrator(object):
 
         return all_info
 
-    def plot(self, cmap='Set2', figsize=(10, 10), ax=None):
+    def plot(self, figsize=(10, 10), ax=None, w_target=True):
         import matplotlib.pyplot as plt
         from matplotlib.ticker import NullFormatter
 
@@ -118,14 +118,14 @@ class OccupancyCalibrator(object):
                     alpha=0.6,
                     edgecolor='white')
 
-                target = density_to_occupancy(
-                    density, hr, nsz, parameters=params)
-
-                nax.plot(
-                    density,
-                    target,
-                    color='red',
-                    label='target')
+                if w_target:
+                    target = density_to_occupancy(
+                        density, hr, nsz, parameters=params)
+                    nax.plot(
+                        density,
+                        target,
+                        color='red',
+                        label='target')
 
                 nax.set_ylim(0, 1)
                 nax.set_xlim(0, density.max())
@@ -147,8 +147,8 @@ class OccupancyCalibrator(object):
 
         font = {'fontsize': 18}
         plt.figtext(0.4, 0.05, "Density (Km^-2)", fontdict=font)
-        plt.figtext(0.05, 0.5, "Occupancy (%)", fontdict=font, rotation=90)
-        plt.figtext(0.45, 1.01, "Occupancy Calibration", fontdict=font)
+        plt.figtext(0.04, 0.5, "Occupancy (%)", fontdict=font, rotation=90)
+        plt.figtext(0.4, 1.0, "Occupancy Calibration", fontdict=font)
         return ax
 
     def fit(self):
@@ -197,12 +197,12 @@ class OccupancyCalibrator(object):
         beta = lrm_prop.intercept_[0]
 
         parameters = {
-            'hr_exp': home_range_exponents.mean(),
+            'hr_exp': -home_range_exponents.mean(),
             'alpha': alpha,
             'beta': beta,
             'occ_exp_a': occ_exp_a,
             'occ_exp_b': occ_exp_b}
-        return parameters, home_range_exponents, occupancy_exponents, proportionality_constants
+        return parameters
 
 
 class Info(object):
