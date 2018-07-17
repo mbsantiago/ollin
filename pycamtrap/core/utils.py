@@ -36,7 +36,7 @@ def velocity_to_home_range(velocity, parameters=None):
     return np.power(velocity / alpha, 1 / exponent)
 
 
-def density(occupancy, home_range, niche_size, parameters=None):
+def density(occupancy, home_range, niche_size, range, parameters=None):
     alpha = parameters['alpha']
     beta = parameters['beta']
     hr_exp = parameters['hr_exp']
@@ -46,11 +46,14 @@ def density(occupancy, home_range, niche_size, parameters=None):
     occ_exp = occ_exp_a * niche_size + occ_exp_b
     prop = np.exp(alpha * niche_size + beta)
 
-    density = prop * (occupancy**occ_exp) / (home_range**hr_exp)
+    area = range[0] * range[1]
+    hr_per = home_range / area
+
+    density = prop * (occupancy**occ_exp) / (hr_per**hr_exp)
     return density
 
 
-def density_to_occupancy(density, home_range, niche_size, parameters=None):
+def density_to_occupancy(density, home_range, niche_size, range, parameters=None):
     alpha = parameters['alpha']
     beta = parameters['beta']
     hr_exp = parameters['hr_exp']
@@ -60,7 +63,10 @@ def density_to_occupancy(density, home_range, niche_size, parameters=None):
     occ_exp = occ_exp_a * niche_size + occ_exp_b
     prop = np.exp(alpha * niche_size + beta)
 
-    occupancy = sigmoid(prop * density**occ_exp * home_range**hr_exp)
+    area = range[0] * range[1]
+    hr_per = home_range / area
+
+    occupancy = sigmoid(prop * density**occ_exp * hr_per**hr_exp)
     return occupancy
 
 

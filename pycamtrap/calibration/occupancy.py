@@ -86,7 +86,7 @@ class OccupancyCalibrator(object):
 
         return all_info
 
-    def plot(self, figsize=(10, 10), ax=None, w_target=True, logplot=False, logitplot=False):
+    def plot(self, figsize=(10, 10), ax=None, w_target=True, xscale='linear', yscale='linear'):
         import matplotlib.pyplot as plt
         from matplotlib.ticker import NullFormatter
 
@@ -110,15 +110,16 @@ class OccupancyCalibrator(object):
                 area = self.range[0] * self.range[1]
                 density = self.nums / area
 
-                if logplot:
+                if xscale == 'log':
                     density = np.log(density)
+                if xscale == 'logit':
+                    density = logit(density)
+
+                if yscale == 'log':
                     mean = np.log(mean)
-                    std = np.log(std)
                     uplim = np.log(uplim)
                     dnlim = np.log(dnlim)
-
-                elif logitplot:
-                    density = np.log(density)
+                if yscale == 'logit':
                     mean = logit(mean)
                     uplim = logit(uplim)
                     dnlim = logit(dnlim)
@@ -137,9 +138,9 @@ class OccupancyCalibrator(object):
                     target = density_to_occupancy(
                         density, hr, nsz, parameters=params)
 
-                    if logplot:
+                    if yscale == 'log':
                         target = np.log(target)
-                    elif logitplot:
+                    if yscale == 'logit':
                         target = logit(target)
 
                     nax.plot(
@@ -148,16 +149,15 @@ class OccupancyCalibrator(object):
                         color='red',
                         label='target')
 
-                xlim0, xlim1 = 0, 1
-                if logplot:
-                    xlim0 = dnlim.min()
-                    xlim1 = 0
+                ylim0, ylim1 = 0, 1
+                if yscale == 'log':
+                    ylim0 = -4
+                    ylim1 = 0
+                if yscale == 'logit':
+                    ylim0 = -4
+                    ylim1 = 4
 
-                elif logitplot:
-                    xlim0 = dnlim.min()
-                    xlim1 = uplim.max()
-
-                nax.set_ylim(xlim0, xlim1)
+                nax.set_ylim(ylim0, ylim1)
                 nax.set_xlim(density.min(), density.max())
                 nax.text(0.1, 0.8, 'HR={} Km^2\nNS={} (%)'.format(hr, nsz))
 
