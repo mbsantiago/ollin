@@ -104,6 +104,8 @@ class OccupancyCalibrator(object):
                 data = self.oc_info[m, n, :, :, :]
                 mean = data.mean(axis=(1, 2))
                 std = data.std(axis=(1, 2))
+                uplim = mean + std
+                dnlim = mean - std
 
                 area = self.range[0] * self.range[1]
                 density = self.nums / area
@@ -112,14 +114,16 @@ class OccupancyCalibrator(object):
                     density = np.log(density)
                     mean = np.log(mean)
                     std = np.log(std)
+                    uplim = np.log(uplim)
+                    dnlim = np.log(dnlim)
 
                 nax.plot(
                     density,
                     mean)
                 nax.fill_between(
                     density,
-                    mean - std,
-                    mean + std,
+                    dnlim,
+                    uplim,
                     alpha=0.6,
                     edgecolor='white')
 
@@ -132,7 +136,12 @@ class OccupancyCalibrator(object):
                         color='red',
                         label='target')
 
-                nax.set_ylim(0, 1)
+                xlim0, xlim1 = 0, 1
+                if logplot:
+                    xlim0 = -10
+                    xlim1 = 0
+
+                nax.set_ylim(xlim0, xlim1)
                 nax.set_xlim(0, density.max())
                 nax.text(0.1, 0.8, 'HR={} Km^2\nNS={} (%)'.format(hr, nsz))
 
