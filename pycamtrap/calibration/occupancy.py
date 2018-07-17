@@ -201,7 +201,7 @@ class OccupancyCalibrator(object):
         nhrs, nnsz, nwrl, nnums, ntpw = data.shape
 
         home_range_exponents = np.zeros([nnsz])
-        occupancy_exponents = np.zeros([nnsz])
+        density_exponents = np.zeros([nnsz])
         proportionality_constants = np.zeros([nnsz])
 
         area = self.range[0] * self.range[1]
@@ -215,12 +215,10 @@ class OccupancyCalibrator(object):
                     oc_data = data[j, i, k, :, :].ravel()
                     hr_data = hr * np.ones_like(oc_data)
                     dens_data = dens * np.ones_like(oc_data)
-                    Y.append(np.log(dens_data))
+                    Y.append(logit(oc_data))
                     X.append(
                         np.stack(
-                            [
-                                np.log(hr_data),
-                                logit(np.minimum(oc_data, 1e-15))], -1))
+                            [np.log(hr_data), np.log(dens_data)], -1))
             X = np.concatenate(X, 0)
             Y = np.concatenate(Y, 0)
 
@@ -228,14 +226,14 @@ class OccupancyCalibrator(object):
             lrm.fit(X, Y)
 
             home_range_exponents[i] = lrm.coef_[0]
-            occupancy_exponents[i] = lrm.coef_[1]
+            density_exponents[i] = lrm.coef_[1]
             proportionality_constants[i] = lrm.intercept_
 
-        lrm_occ = LinearRegression()
-        lrm_occ.fit(self.niche_sizes[:, None], occupancy_exponents)
+        lrm_dens = LinearRegression()
+        lrm_dens.fit(self.niche_sizes[:, None], density_exponents)
 
-        occ_exp_a = lrm_occ.coef_[0]
-        occ_exp_b = lrm_occ.intercept_
+        den_exp_a = lrm_dens.coef_[0]
+        den_exp_b = lrm_dens.intercept_
 
         lrm_prop = LinearRegression()
         lrm_prop.fit(
@@ -248,8 +246,8 @@ class OccupancyCalibrator(object):
             'hr_exp': -home_range_exponents.mean(),
             'alpha': alpha,
             'beta': beta,
-            'occ_exp_a': occ_exp_a,
-            'occ_exp_b': occ_exp_b}
+            'den_exp_a': den_exp_a,
+            'den_exp_b': den_exp_b}
         return parameters
 
 
