@@ -147,8 +147,8 @@ class OccupancyCalibrator(object):
 
         font = {'fontsize': 18}
         plt.figtext(0.4, 0.05, "Density (Km^-2)", fontdict=font)
-        plt.figtext(0.04, 0.5, "Occupancy (%)", fontdict=font, rotation=90)
-        plt.figtext(0.4, 1.0, "Occupancy Calibration", fontdict=font)
+        plt.figtext(0.035, 0.5, "Occupancy (%)", fontdict=font, rotation=90)
+        plt.figtext(0.38, 0.95, "Occupancy Calibration", fontdict=font)
         return ax
 
     def fit(self):
@@ -174,26 +174,32 @@ class OccupancyCalibrator(object):
                     Y.append(dens_data)
                     X.append(np.stack([hr_data, oc_data], -1))
             X = np.concatenate(X, 0)
-            Y = np.concatenate(Y, 0)[:, None]
+            Y = np.concatenate(Y, 0)
 
             lrm = LinearRegression()
             lrm.fit(np.log(X), np.log(Y))
 
-            home_range_exponents[i] = lrm.coef_[0, 0]
-            occupancy_exponents[i] = lrm.coef_[0, 1]
+            print('log-log regression nsz={}'.format(nsz), lrm.coef_)
+            home_range_exponents[i] = lrm.coef_[0]
+            occupancy_exponents[i] = lrm.coef_[1]
             proportionality_constants[i] = lrm.intercept_[0]
 
         lrm_occ = LinearRegression()
-        lrm_occ.fit(self.niche_sizes[:, None], occupancy_exponents[:, None])
+        lrm_occ.fit(self.niche_sizes[:, None], occupancy_exponents)
+        print('Occupancy exponents', occupancy_exponents)
+        print('Occupancy exponents fit', lrm_occ.coef_)
 
-        occ_exp_a = lrm_occ.coef_[0, 0]
+        occ_exp_a = lrm_occ.coef_[0]
         occ_exp_b = lrm_occ.intercept_[0]
 
         lrm_prop = LinearRegression()
         lrm_prop.fit(
-            self.niche_sizes[:, None], proportionality_constants[:, None])
+            self.niche_sizes[:, None], proportionality_constants)
 
-        alpha = lrm_prop.coef_[0, 0]
+        print('Proporcionality constants', proportionality_constants)
+        print('Proportionality constants fit', lrm_prop.coef_)
+
+        alpha = lrm_prop.coef_[0]
         beta = lrm_prop.intercept_[0]
 
         parameters = {
