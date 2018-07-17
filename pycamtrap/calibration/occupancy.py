@@ -88,11 +88,10 @@ class OccupancyCalibrator(object):
 
     def plot(self, cmap='Set2', figsize=(10, 10), ax=None):
         import matplotlib.pyplot as plt
-        from matplotlib.cm import get_cmap
+        from matplotlib.ticker import NullFormatter
 
         if ax is None:
             fig, ax = plt.subplots(figsize=figsize)
-        cmap = get_cmap(cmap)
 
         ncols = len(self.home_ranges)
         nrows = len(self.niche_sizes)
@@ -130,7 +129,12 @@ class OccupancyCalibrator(object):
 
                 nax.set_ylim(0, 1)
                 nax.set_xlim(0, density.max())
-                nax.text(0.1, 0.1, 'HR={} Km^2 NS={} (%)'.format(hr, nsz))
+                nax.text(0.1, 0.9, 'HR={} Km^2\nNS={} (%)'.format(hr, nsz))
+
+                if m < ncols - 1:
+                    ax.xaxis.set_major_formatter(NullFormatter())
+                if n < nrows - 1:
+                    ax.yaxis.set_major_formatter(NullFormatter())
 
                 counter += 1
 
