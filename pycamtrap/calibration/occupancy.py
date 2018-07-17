@@ -138,7 +138,7 @@ class OccupancyCalibrator(object):
                     uplim = logit(uplim)
                     dnlim = logit(dnlim)
                     ylim0 = -4
-                    ylim1 = -4
+                    ylim1 = 4
                     ytext = logit(ytext)
 
                 nax.plot(
@@ -216,7 +216,11 @@ class OccupancyCalibrator(object):
                     hr_data = hr * np.ones_like(oc_data)
                     dens_data = dens * np.ones_like(oc_data)
                     Y.append(np.log(dens_data))
-                    X.append(np.stack([logit(hr_data), np.log(oc_data)], -1))
+                    X.append(
+                        np.stack(
+                            [
+                                np.log(hr_data),
+                                logit(np.minimum(oc_data, 1e-15))], -1))
             X = np.concatenate(X, 0)
             Y = np.concatenate(Y, 0)
 
