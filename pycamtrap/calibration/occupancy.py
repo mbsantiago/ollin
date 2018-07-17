@@ -243,7 +243,7 @@ class OccupancyCalibrator(object):
         beta = lrm_prop.intercept_
 
         parameters = {
-            'hr_exp': -home_range_exponents.mean(),
+            'hr_exp': home_range_exponents.mean(),
             'alpha': alpha,
             'beta': beta,
             'den_exp_a': den_exp_a,
