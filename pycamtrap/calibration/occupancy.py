@@ -140,7 +140,7 @@ class OccupancyCalibrator(object):
 
                 xlim0, xlim1 = 0, 1
                 if logplot:
-                    xlim0 = min_occ
+                    xlim0 = np.log(min_occ)
                     xlim1 = 0
 
                 nax.set_ylim(xlim0, xlim1)
