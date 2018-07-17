@@ -86,7 +86,7 @@ class OccupancyCalibrator(object):
 
         return all_info
 
-    def plot(self, cmap='Set2', figsize=(10, 10), ax=None, ncols=3):
+    def plot(self, cmap='Set2', figsize=(10, 10), ax=None):
         import matplotlib.pyplot as plt
         from matplotlib.cm import get_cmap
 
@@ -94,14 +94,14 @@ class OccupancyCalibrator(object):
             fig, ax = plt.subplots(figsize=figsize)
         cmap = get_cmap(cmap)
 
-        n_hr = len(self.home_ranges)
-        nrows = int(np.ceil(n_hr / ncols))
+        ncols = len(self.home_ranges)
+        nrows = len(self.niche_sizes)
         params = self.movement_model.parameters['density']
 
+        counter = 1
         for m, hr in enumerate(self.home_ranges):
-            nax = plt.subplot(nrows, ncols, m + 1)
             for n, nsz in enumerate(self.niche_sizes):
-                color = cmap(float(n) / len(self.niche_sizes))
+                nax = plt.subplot(nrows, ncols, counter)
                 data = self.oc_info[m, n, :, :, :]
                 mean = data.mean(axis=(0, 2))
                 std = data.std(axis=(0, 2))
@@ -112,29 +112,29 @@ class OccupancyCalibrator(object):
                 nax.plot(
                     density,
                     mean,
-                    c=color,
                     label='Niche Size: {}'.format(nsz))
                 nax.fill_between(
                     density,
                     mean - std,
                     mean + std,
-                    color=color,
                     alpha=0.6,
                     edgecolor='white')
 
-            target = density_to_occupancy(
-                density, hr, parameters=params)
-            nax.plot(
-                density,
-                target,
-                color='red',
-                label='target')
+                target = density_to_occupancy(
+                        density, hr, nsz, parameters=params)
 
-            nax.set_ylim(0, 1)
-            nax.set_xlabel('Density (1/Km^2)')
-            nax.set_ylabel('Occupancy (%)')
-            nax.set_title('Home range: {} Km^2'.format(hr))
-            nax.legend()
+                nax.plot(
+                        density,
+                        target,
+                        color='red',
+                        label='target')
+
+                nax.set_ylim(0, 1)
+                nax.set_xlabel('Density (1/Km^2)')
+                nax.set_ylabel('Occupancy (%)')
+                nax.set_title('HR={} Km^2 NS={} (%)'.format(hr, nsz))
+
+                counter += 1
         plt.tight_layout()
 
         msg = 'Occupancy Calibration\n{}'.format(self.movement_model.name)
