@@ -97,6 +97,8 @@ class OccupancyCalibrator(object):
         nrows = len(self.niche_sizes)
         params = self.movement_model.parameters['density']
 
+        min_occ = self.oc_info.min()
+
         counter = 1
         for m, hr in enumerate(self.home_ranges):
             for n, nsz in enumerate(self.niche_sizes):
@@ -138,7 +140,7 @@ class OccupancyCalibrator(object):
 
                 xlim0, xlim1 = 0, 1
                 if logplot:
-                    xlim0 = -10
+                    xlim0 = min_occ
                     xlim1 = 0
 
                 nax.set_ylim(xlim0, xlim1)
