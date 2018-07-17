@@ -86,7 +86,13 @@ class OccupancyCalibrator(object):
 
         return all_info
 
-    def plot(self, figsize=(10, 10), ax=None, w_target=True, xscale='linear', yscale='linear'):
+    def plot(
+            self,
+            figsize=(10, 10),
+            ax=None,
+            w_target=True,
+            xscale=None,
+            yscale=None):
         import matplotlib.pyplot as plt
         from matplotlib.ticker import NullFormatter
 
@@ -110,19 +116,30 @@ class OccupancyCalibrator(object):
                 area = self.range[0] * self.range[1]
                 density = self.nums / area
 
+                xtext = 0.1
+                ytext = 0.8
+
+                ylim0, ylim1 = 0, 1
+
                 if xscale == 'log':
                     density = np.log(density)
-                if xscale == 'logit':
-                    density = logit(density)
+                    xtext = np.log(xtext)
 
                 if yscale == 'log':
                     mean = np.log(mean)
                     uplim = np.log(uplim)
                     dnlim = np.log(dnlim)
+                    ylim0 = -4
+                    ylim1 = 0
+                    ytext = np.log(ytext)
+
                 if yscale == 'logit':
                     mean = logit(mean)
                     uplim = logit(uplim)
                     dnlim = logit(dnlim)
+                    ylim0 = -4
+                    ylim1 = -4
+                    ytext = logit(ytext)
 
                 nax.plot(
                     density,
@@ -136,7 +153,11 @@ class OccupancyCalibrator(object):
 
                 if w_target:
                     target = density_to_occupancy(
-                        density, hr, nsz, parameters=params)
+                        density,
+                        hr,
+                        nsz,
+                        self.range,
+                        parameters=params)
 
                     if yscale == 'log':
                         target = np.log(target)
@@ -149,17 +170,10 @@ class OccupancyCalibrator(object):
                         color='red',
                         label='target')
 
-                ylim0, ylim1 = 0, 1
-                if yscale == 'log':
-                    ylim0 = -4
-                    ylim1 = 0
-                if yscale == 'logit':
-                    ylim0 = -4
-                    ylim1 = 4
-
                 nax.set_ylim(ylim0, ylim1)
                 nax.set_xlim(density.min(), density.max())
-                nax.text(0.1, 0.8, 'HR={} Km^2\nNS={} (%)'.format(hr, nsz))
+
+                nax.text(xtext, ytext, 'HR={} Km^2\nNS={} (%)'.format(hr, nsz))
 
                 if m == ncols - 1:
                     nax.set_xlabel('NS={}'.format(nsz))
@@ -201,13 +215,13 @@ class OccupancyCalibrator(object):
                     oc_data = data[j, i, k, :, :].ravel()
                     hr_data = hr * np.ones_like(oc_data)
                     dens_data = dens * np.ones_like(oc_data)
-                    Y.append(dens_data)
-                    X.append(np.stack([hr_data, oc_data], -1))
+                    Y.append(np.log(dens_data))
+                    X.append(np.stack([logit(hr_data), np.log(oc_data)], -1))
             X = np.concatenate(X, 0)
             Y = np.concatenate(Y, 0)
 
             lrm = LinearRegression()
-            lrm.fit(np.log(X), np.log(Y))
+            lrm.fit(X, Y)
 
             home_range_exponents[i] = lrm.coef_[0]
             occupancy_exponents[i] = lrm.coef_[1]

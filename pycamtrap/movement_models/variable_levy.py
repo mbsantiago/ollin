@@ -19,8 +19,8 @@ class Model(MovementModel):
             'alpha': 0.0,
             'beta': 22.0,
             'hr_exp': 1.2,
-            'occ_exp_a': 1.75,
-            'occ_exp_b': 1.75},
+            'den_exp_a': 1.75,
+            'den_exp_b': 1.75},
         'movement': {
             'min_pareto': 1.1,
             'max_pareto': 1.9},

@@ -10,7 +10,9 @@ try:
 except ImportError:
     from backports.functools_lru_cache import lru_cache
 
-from .utils import density, home_range_to_velocity, velocity_modification
+from .utils import (occupancy_to_density,
+                    home_range_to_velocity,
+                    velocity_modification)
 from ..movement_models.basemodel import MovementModel
 
 
@@ -96,8 +98,12 @@ class MovementData(object):
                 msg = 'If num is not specified home range AND occupancy'
                 msg += ' must be provided'
                 raise ValueError(msg)
-            dens = density(
-                occupancy, home_range, parameters=parameters['density'])
+            dens = occupancy_to_density(
+                occupancy,
+                home_range,
+                initial_conditions.niche_size,
+                initial_conditions.range,
+                parameters=parameters['density'])
             num = int(rangex * rangey * dens)
 
         if days is None:
