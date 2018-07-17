@@ -118,6 +118,7 @@ class OccupancyCalibrator(object):
                     dnlim = np.log(dnlim)
 
                 elif logitplot:
+                    density = np.log(density)
                     mean = logit(mean)
                     uplim = logit(uplim)
                     dnlim = logit(dnlim)
