@@ -182,7 +182,7 @@ class OccupancyCalibrator(object):
             print('log-log regression nsz={}'.format(nsz), lrm.coef_)
             home_range_exponents[i] = lrm.coef_[0]
             occupancy_exponents[i] = lrm.coef_[1]
-            proportionality_constants[i] = lrm.intercept_[0]
+            proportionality_constants[i] = lrm.intercept_
 
         lrm_occ = LinearRegression()
         lrm_occ.fit(self.niche_sizes[:, None], occupancy_exponents)
@@ -190,7 +190,7 @@ class OccupancyCalibrator(object):
         print('Occupancy exponents fit', lrm_occ.coef_)
 
         occ_exp_a = lrm_occ.coef_[0]
-        occ_exp_b = lrm_occ.intercept_[0]
+        occ_exp_b = lrm_occ.intercept_
 
         lrm_prop = LinearRegression()
         lrm_prop.fit(
@@ -200,7 +200,7 @@ class OccupancyCalibrator(object):
         print('Proportionality constants fit', lrm_prop.coef_)
 
         alpha = lrm_prop.coef_[0]
-        beta = lrm_prop.intercept_[0]
+        beta = lrm_prop.intercept_
 
         parameters = {
             'hr_exp': -home_range_exponents.mean(),
