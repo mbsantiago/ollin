@@ -95,6 +95,7 @@ class OccupancyCalibrator(object):
 
         n_hr = len(self.home_ranges)
         nrows = int(np.ceil(n_hr / ncols))
+        params = self.movement_model.parameters['density']
 
         for m, hr in enumerate(self.home_ranges):
             nax = plt.subplot(nrows, ncols, m + 1)
@@ -121,7 +122,7 @@ class OccupancyCalibrator(object):
                     edgecolor='white')
 
                 target = density_to_occupancy(
-                    density, hr, parameters=self.movement_model.parameters)
+                    density, hr, parameters=params)
                 nax.plot(
                     density,
                     target,
