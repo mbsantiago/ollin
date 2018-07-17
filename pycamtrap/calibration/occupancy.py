@@ -111,8 +111,7 @@ class OccupancyCalibrator(object):
 
                 nax.plot(
                     density,
-                    mean,
-                    label='Niche Size: {}'.format(nsz))
+                    mean)
                 nax.fill_between(
                     density,
                     mean - std,
@@ -121,24 +120,21 @@ class OccupancyCalibrator(object):
                     edgecolor='white')
 
                 target = density_to_occupancy(
-                        density, hr, nsz, parameters=params)
+                    density, hr, nsz, parameters=params)
 
                 nax.plot(
-                        density,
-                        target,
-                        color='red',
-                        label='target')
+                    density,
+                    target,
+                    color='red',
+                    label='target')
 
                 nax.set_ylim(0, 1)
-                nax.set_xlabel('Density (1/Km^2)')
-                nax.set_ylabel('Occupancy (%)')
-                nax.set_title('HR={} Km^2 NS={} (%)'.format(hr, nsz))
+                nax.set_xlim(0, density.max())
+                nax.text(0.1, 0.1, 'HR={} Km^2 NS={} (%)'.format(hr, nsz))
 
                 counter += 1
-        plt.tight_layout()
 
-        msg = 'Occupancy Calibration\n{}'.format(self.movement_model.name)
-        ax.set_title(msg)
+        plt.subplots_adjust(wspace=0, hspace=0)
         return ax
 
     def fit(self):
@@ -185,6 +181,8 @@ class OccupancyCalibrator(object):
 
         alpha = lrm_prop.coef_[0, 0]
         beta = lrm_prop.intercept_[0]
+
+        print(home_range_exponents, home_range_exponents.mean())
 
         parameters = {
             'hr_exp': home_range_exponents.mean(),
