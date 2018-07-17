@@ -13,12 +13,14 @@ class Model(MovementModel):
             'beta': 7.9,
             'alpha': -3.1},
         'home_range': {
-            'alpha': 0.08363,
-            'exponent': 0.524},
+            'alpha': 0.08717,
+            'exponent': 0.52921},
         'density': {
-            'alpha': 22.0,
+            'alpha': 0.0,
+            'beta': 22.0,
             'hr_exp': 1.2,
-            'occ_exp': 1.75},
+            'occ_exp_a': 1.75,
+            'occ_exp_b': 1.75},
         'movement': {
             'min_pareto': 1.1,
             'max_pareto': 1.9},

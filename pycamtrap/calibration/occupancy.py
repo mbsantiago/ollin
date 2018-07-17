@@ -13,7 +13,7 @@ RANGE = 20
 TRIALS_PER_WORLD = 100
 MAX_INDIVIDUALS = 10000
 NUM_WORLDS = 10
-HOME_RANGES = np.linspace(0.1, 3, 10)
+HOME_RANGES = np.linspace(0.1, 3, 6)
 NICHE_SIZES = np.linspace(0.3, 0.9, 6)
 NUMS = np.linspace(10, 1000, 6, dtype=np.int64)
 
@@ -61,7 +61,8 @@ class OccupancyCalibrator(object):
                 for k in xrange(self.num_worlds)]
 
         nargs = len(arguments)
-        msg = 'Making {} runs of the simulator\n\tSimulating a total of {} individuals'
+        msg = 'Making {} runs of the simulator'
+        msg += '\n\tSimulating a total of {} individuals'
         msg = msg.format(nargs, n_hr * n_nsz * tpw * np.sum(self.nums))
         print(msg)
         pool = Pool()

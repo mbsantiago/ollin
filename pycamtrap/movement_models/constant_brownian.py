@@ -14,9 +14,11 @@ class Model(MovementModel):
             'alpha': 35.0,
             'exponent': 0.54},
         'density': {
-            'alpha': 22.0,
+            'alpha': 0.0,
+            'beta': 22.0,
             'hr_exp': 1.2,
-            'occ_exp': 1.75},
+            'occ_exp_a': 1.75,
+            'occ_exp_b': 1.75},
         'movement': {}
     }
 
