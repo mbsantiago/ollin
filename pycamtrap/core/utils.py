@@ -12,6 +12,14 @@ def normalize(array):
     return normalized
 
 
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
+def logit(y):
+    return -np.log((1/y) - 1)
+
+
 def occupancy_resolution(home_range, parameters=None):
     return np.sqrt(home_range)
 
@@ -52,7 +60,7 @@ def density_to_occupancy(density, home_range, niche_size, parameters=None):
     occ_exp = occ_exp_a * niche_size + occ_exp_b
     prop = np.exp(alpha * niche_size + beta)
 
-    occupancy = np.power(density * (home_range**hr_exp) / prop, 1 / occ_exp)
+    occupancy = sigmoid(prop * density**occ_exp * home_range**hr_exp)
     return occupancy
 
 

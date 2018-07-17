@@ -6,7 +6,7 @@ import sys
 import numpy as np
 import pycamtrap as pc
 
-from ..core.utils import density_to_occupancy
+from ..core.utils import density_to_occupancy, logit
 
 
 RANGE = 20
@@ -86,7 +86,7 @@ class OccupancyCalibrator(object):
 
         return all_info
 
-    def plot(self, figsize=(10, 10), ax=None, w_target=True, logplot=False):
+    def plot(self, figsize=(10, 10), ax=None, w_target=True, logplot=False, logitplot=False):
         import matplotlib.pyplot as plt
         from matplotlib.ticker import NullFormatter
 
@@ -96,8 +96,6 @@ class OccupancyCalibrator(object):
         ncols = len(self.home_ranges)
         nrows = len(self.niche_sizes)
         params = self.movement_model.parameters['density']
-
-        min_occ = self.oc_info.min()
 
         counter = 1
         for m, hr in enumerate(self.home_ranges):
@@ -119,6 +117,11 @@ class OccupancyCalibrator(object):
                     uplim = np.log(uplim)
                     dnlim = np.log(dnlim)
 
+                elif logitplot:
+                    mean = logit(mean)
+                    uplim = logit(uplim)
+                    dnlim = logit(dnlim)
+
                 nax.plot(
                     density,
                     mean)
@@ -132,6 +135,12 @@ class OccupancyCalibrator(object):
                 if w_target:
                     target = density_to_occupancy(
                         density, hr, nsz, parameters=params)
+
+                    if logplot:
+                        target = np.log(target)
+                    elif logitplot:
+                        target = logit(target)
+
                     nax.plot(
                         density,
                         target,
@@ -142,6 +151,10 @@ class OccupancyCalibrator(object):
                 if logplot:
                     xlim0 = dnlim.min()
                     xlim1 = 0
+
+                elif logitplot:
+                    xlim0 = dnlim.min()
+                    xlim1 = uplim.max()
 
                 nax.set_ylim(xlim0, xlim1)
                 nax.set_xlim(density.min(), density.max())
