@@ -121,13 +121,13 @@ class OccupancyCalibrator(object):
                     alpha=0.6,
                     edgecolor='white')
 
-                target = density_to_occupancy(
-                    density, hr, parameters=params)
-                nax.plot(
-                    density,
-                    target,
-                    color='red',
-                    label='target')
+            target = density_to_occupancy(
+                density, hr, parameters=params)
+            nax.plot(
+                density,
+                target,
+                color='red',
+                label='target')
 
             nax.set_ylim(0, 1)
             nax.set_xlabel('Density (1/Km^2)')
