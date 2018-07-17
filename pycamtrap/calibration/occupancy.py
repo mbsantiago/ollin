@@ -145,8 +145,9 @@ class OccupancyCalibrator(object):
                 counter += 1
 
         plt.subplots_adjust(wspace=0, hspace=0)
-        plt.figtext(0.5, 0.0, "Density (Km^-2)", fontdict={'fontsize': 18})
-        plt.figtext(0.0, 0.5, "Occupancy (%)", fontdict={'fontsize': 18}, rotation=90)
+        plt.figtext(0.4, 0.1, "Density (Km^-2)", fontdict={'fontsize': 18})
+        plt.figtext(0.1, 0.5, "Occupancy (%)", fontdict={'fontsize': 18}, rotation=90)
+        plt.figtext(0.5, 1.1, "Occupancy Calibration", fontdict={'fontsize': 18})
         return ax
 
     def fit(self):
@@ -194,15 +195,13 @@ class OccupancyCalibrator(object):
         alpha = lrm_prop.coef_[0, 0]
         beta = lrm_prop.intercept_[0]
 
-        print(home_range_exponents, home_range_exponents.mean())
-
         parameters = {
             'hr_exp': home_range_exponents.mean(),
             'alpha': alpha,
             'beta': beta,
             'occ_exp_a': occ_exp_a,
             'occ_exp_b': occ_exp_b}
-        return parameters
+        return parameters, home_range_exponents, occupancy_exponents, proportionality_constants
 
 
 class Info(object):
