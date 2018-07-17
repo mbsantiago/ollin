@@ -144,7 +144,7 @@ class OccupancyCalibrator(object):
                     xlim1 = 0
 
                 nax.set_ylim(xlim0, xlim1)
-                nax.set_xlim(0, density.max())
+                nax.set_xlim(density.min(), density.max())
                 nax.text(0.1, 0.8, 'HR={} Km^2\nNS={} (%)'.format(hr, nsz))
 
                 if m == ncols - 1:
