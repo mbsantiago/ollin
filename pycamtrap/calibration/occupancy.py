@@ -93,7 +93,9 @@ class OccupancyCalibrator(object):
             x_var='density',
             w_target=True,
             xscale=None,
-            yscale=None):
+            yscale=None,
+            beta=1,
+            lwidth=0.1):
         import matplotlib.pyplot as plt
         from matplotlib.ticker import NullFormatter
 
@@ -132,17 +134,18 @@ class OccupancyCalibrator(object):
 
                 if x_var == 'density':
                     data = self.oc_info[m, n, :, :, :]
+                    xcoords = density
                 elif x_var == 'home_range':
                     data = self.oc_info[:, n, m, :, :]
+                    xcoords = beta * hr_proportions
                 elif x_var == 'niche_sizes':
                     data = self.oc_info[m, :, n, :, :]
+                    xcoords = self.niche_sizes
 
                 mean = data.mean(axis=(1, 2))
                 std = data.std(axis=(1, 2))
                 uplim = mean + std
                 dnlim = mean - std
-
-                xcoords = density
 
                 xtext = 0.1
                 ytext = 0.8
@@ -171,7 +174,8 @@ class OccupancyCalibrator(object):
 
                 nax.plot(
                     xcoords,
-                    mean)
+                    mean,
+                    linewidth=lwidth)
                 nax.fill_between(
                     xcoords,
                     dnlim,
