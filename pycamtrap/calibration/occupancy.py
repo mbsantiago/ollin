@@ -152,7 +152,7 @@ class OccupancyCalibrator(object):
                 xtext = 0.1
                 ytext = 0.8
 
-                ylim0, ylim1 = 0, 1
+                ylim0, ylim1 = -0.1, 1.1
 
                 if xscale == 'log':
                     xcoords = np.log(xcoords)
