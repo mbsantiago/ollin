@@ -96,7 +96,8 @@ class OccupancyCalibrator(object):
             yscale=None,
             beta=1,
             lwidth=0.1,
-            wtext=False):
+            wtext=False,
+            wspace=0):
         import matplotlib.pyplot as plt
         from matplotlib.ticker import NullFormatter
 
@@ -232,12 +233,14 @@ class OccupancyCalibrator(object):
                     nax.yaxis.set_major_formatter(NullFormatter())
 
                 counter += 1
-        plt.subplots_adjust(wspace=0, hspace=0)
+        plt.subplots_adjust(wspace=wspace, hspace=wspace)
 
         font = {'fontsize': 18}
         plt.figtext(0.4, 0.05, x_var, fontdict=font)
         plt.figtext(0.035, 0.5, "Occupancy (%)", fontdict=font, rotation=90)
-        plt.figtext(0.38, 0.92, "Occupancy Calibration", fontdict=font)
+        title = "Occupancy Calibration\n{}"
+        title = title.format(self.movement_model.name)
+        plt.figtext(0.38, 0.92, title, fontdict=font)
         return ax
 
     def fit(self):
