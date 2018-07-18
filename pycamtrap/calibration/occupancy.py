@@ -210,11 +210,12 @@ class OccupancyCalibrator(object):
                     oc_data = data[j, i, k, :, :].ravel()
                     hr_data = hr * np.ones_like(oc_data)
                     dens_data = dens * np.ones_like(oc_data)
+                    nsz_data = nsz * np.ones_like(oc_data)
                     Y.append(logit(oc_data))
                     X.append(
                         np.stack([np.log(hr_data),
                                   np.log(dens_data),
-                                  np.log(nsz)], -1))
+                                  np.log(nsz_data)], -1))
         X = np.concatenate(X, 0)
         Y = np.concatenate(Y, 0)
 
