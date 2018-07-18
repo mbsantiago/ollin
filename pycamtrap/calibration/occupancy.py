@@ -198,56 +198,39 @@ class OccupancyCalibrator(object):
     def fit(self):
         from sklearn.linear_model import LinearRegression
         data = self.oc_info
-        nhrs, nnsz, nwrl, nnums, ntpw = data.shape
-
-        home_range_exponents = np.zeros([nnsz])
-        density_exponents = np.zeros([nnsz])
-        proportionality_constants = np.zeros([nnsz])
-
         area = self.range[0] * self.range[1]
         density = self.nums / float(area)
+        hr_proportions = self.home_ranges / float(area)
 
+        X = []
+        Y = []
         for i, nsz in enumerate(self.niche_sizes):
-            X = []
-            Y = []
-            for j, hr in enumerate(self.home_ranges):
+            for j, hr in enumerate(hr_proportions):
                 for k, dens in enumerate(density):
                     oc_data = data[j, i, k, :, :].ravel()
-                    hr_data = hr * np.ones_like(oc_data) / area
+                    hr_data = hr * np.ones_like(oc_data)
                     dens_data = dens * np.ones_like(oc_data)
                     Y.append(logit(oc_data))
                     X.append(
-                        np.stack(
-                            [np.log(hr_data), np.log(dens_data)], -1))
-            X = np.concatenate(X, 0)
-            Y = np.concatenate(Y, 0)
+                        np.stack([np.log(hr_data),
+                                  np.log(dens_data),
+                                  np.log(nsz)], -1))
+        X = np.concatenate(X, 0)
+        Y = np.concatenate(Y, 0)
 
-            lrm = LinearRegression()
-            lrm.fit(X, Y)
+        lrm = LinearRegression()
+        lrm.fit(X, Y)
 
-            home_range_exponents[i] = lrm.coef_[0]
-            density_exponents[i] = lrm.coef_[1]
-            proportionality_constants[i] = lrm.intercept_
-
-        lrm_dens = LinearRegression()
-        lrm_dens.fit(self.niche_sizes[:, None], density_exponents)
-
-        den_exp_a = lrm_dens.coef_[0]
-        den_exp_b = lrm_dens.intercept_
-
-        lrm_prop = LinearRegression()
-        lrm_prop.fit(
-            self.niche_sizes[:, None], proportionality_constants)
-
-        alpha = lrm_prop.coef_[0]
-        beta = lrm_prop.intercept_
+        alpha = lrm.intercept_
+        hr_exp = lrm.coef_[0]
+        den_exp = lrm.coef_[1]
+        nsz_exp = lrm.coef_[2]
 
         parameters = {
-            'hr_exp': home_range_exponents.mean(),
             'alpha': alpha,
-            'beta': beta,
-            'den_exp_a': den_exp_a,
-            'den_exp_b': den_exp_b}
+            'hr_exp': hr_exp,
+            'density_exp': den_exp,
+            'niche_size_exp': nsz_exp}
         return parameters
 
 

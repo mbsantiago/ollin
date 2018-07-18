@@ -43,19 +43,17 @@ def occupancy_to_density(
         range,
         parameters=None):
     alpha = parameters['alpha']
-    beta = parameters['beta']
     hr_exp = parameters['hr_exp']
-    den_exp_a = parameters['den_exp_a']
-    den_exp_b = parameters['den_exp_b']
-
-    den_exp = den_exp_a * niche_size + den_exp_b
-    prop = alpha * niche_size + beta
+    den_exp = parameters['den_exp']
+    nsz_exp = parameters['niche_size_exp']
 
     area = range[0] * range[1]
-    hr_per = home_range / area
+    hr_prop = home_range / area
 
     density = np.exp(
-        (logit(occupancy) - prop - np.log(hr_per) * hr_exp) / den_exp)
+        (logit(occupancy) - alpha -
+         np.log(hr_prop) * hr_exp -
+         np.log(niche_size) * nsz_exp) / den_exp)
     return density
 
 
@@ -66,19 +64,17 @@ def density_to_occupancy(
         range,
         parameters=None):
     alpha = parameters['alpha']
-    beta = parameters['beta']
     hr_exp = parameters['hr_exp']
-    den_exp_a = parameters['den_exp_a']
-    den_exp_b = parameters['den_exp_b']
-
-    den_exp = den_exp_a * niche_size + den_exp_b
-    prop = alpha * niche_size + beta
+    den_exp = parameters['density_exp']
+    nsz_exp = parameters['niche_size_exp']
 
     area = range[0] * range[1]
-    hr_per = home_range / area
+    hr_prop = home_range / area
 
     occupancy = sigmoid(
-        prop + np.log(density) * den_exp + np.log(hr_per) * hr_exp)
+        alpha + np.log(density) * den_exp +
+        np.log(hr_prop) * hr_exp +
+        np.log(niche_size) + nsz_exp)
     return occupancy
 
 
