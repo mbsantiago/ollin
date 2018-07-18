@@ -157,7 +157,7 @@ class OccupancyCalibrator(object):
                     mean = np.log(mean)
                     uplim = np.log(uplim)
                     dnlim = np.log(dnlim)
-                    ylim0 = -4
+                    ylim0 = -6
                     ylim1 = 0
                     ytext = np.log(ytext)
 
@@ -165,7 +165,7 @@ class OccupancyCalibrator(object):
                     mean = logit(mean)
                     uplim = logit(uplim)
                     dnlim = logit(dnlim)
-                    ylim0 = -4
+                    ylim0 = -6
                     ylim1 = 4
                     ytext = logit(ytext)
 
