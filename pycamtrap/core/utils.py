@@ -25,15 +25,15 @@ def occupancy_resolution(home_range, parameters=None):
 
 
 def home_range_to_velocity(home_range, parameters=None):
-    exponent = parameters['home_range']['exponent']
-    alpha = parameters['home_range']['alpha']
-    return alpha * np.power(home_range, exponent)
+    exponent = parameters['exponent']
+    alpha = parameters['alpha']
+    return np.power(home_range / alpha, 1 / exponent)
 
 
 def velocity_to_home_range(velocity, parameters=None):
     exponent = parameters['home_range']['exponent']
     alpha = parameters['home_range']['alpha']
-    return np.power(velocity / alpha, 1 / exponent)
+    return alpha * velocity**exponent
 
 
 def occupancy_to_density(

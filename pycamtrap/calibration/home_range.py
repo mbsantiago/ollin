@@ -97,7 +97,7 @@ class HomeRangeCalibrator(object):
                 edgecolor='white')
         target_hr = velocity_to_home_range(
             np.array(self.velocities),
-            parameters=self.movement_model.parameters)
+            parameters=self.movement_model.parameters['home_range'])
         ax.plot(
             self.velocities,
             target_hr,
@@ -131,14 +131,14 @@ class HomeRangeCalibrator(object):
             data = np.concatenate(concat, 0)
             velocity, home_range = data.T
             model = LinearRegression()
-            model.fit(np.log(home_range)[:, None], np.log(velocity)[:, None])
-            exponents[num] = model.coef_[0, 0]
-            alphas[num] = np.exp(model.intercept_[0])
+            model.fit(np.log(velocity)[:, None], np.log(home_range))
+
+            exponents[num] = model.coef_[0]
+            alphas[num] = np.exp(model.intercept_)
 
         fit = {
-            'niche_sizes': self.niche_sizes,
-            'alphas': alphas,
-            'exponents': exponents}
+            'alpha': alphas.mean(),
+            'exponent': exponents.mean()}
         return fit
 
 

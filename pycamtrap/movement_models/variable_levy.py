@@ -17,10 +17,9 @@ class Model(MovementModel):
             'exponent': 0.52921},
         'density': {
             'alpha': 0.0,
-            'beta': 22.0,
             'hr_exp': 1.2,
-            'den_exp_a': 1.75,
-            'den_exp_b': 1.75},
+            'density_exp': 1.75,
+            'niche_size_exp': 1.75},
         'movement': {
             'min_pareto': 1.1,
             'max_pareto': 1.9},

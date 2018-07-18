@@ -87,7 +87,7 @@ class MovementData(object):
                 raise ValueError(msg)
             velocity = home_range_to_velocity(
                 home_range,
-                parameters=parameters)
+                parameters=parameters['home_range'])
 
         if num is None:
             if occupancy is None:

@@ -112,29 +112,27 @@ class VelocityCalibrator(object):
 
         coefficients = np.zeros(len(self.niche_sizes))
         for num, niche_size in enumerate(self.niche_sizes):
-            data = self.velocity_info[:, num, :, :]
-            concat = []
+            given_vel = []
+            simulated_vel = []
 
             for k, vel in enumerate(self.velocities):
-                vdata = data[k, :, :].ravel()
-                vdata = np.stack([vel * np.ones_like(vdata), vdata], -1)
-                concat.append(vdata)
+                vdata = self.velocity_info[k, num, :, :].ravel()
+                given_vel.append(vel * np.ones_like(vdata))
+                simulated_vel.append(vdata)
 
-            data = np.concatenate(concat, 0)
-            Y, X = data.T
+            given_vel = np.concatenate(given_vel, 0)
+            simulated_vel = np.concatenate(simulated_vel, 0)
             model = LinearRegression(fit_intercept=False)
-            model.fit(X[:, None], Y[:, None])
-            coefficients[num] = model.coef_[0, 0]
+            model.fit(given_vel[:, None], simulated_vel)
+            coefficients[num] = 1 / model.coef_[0]
 
         model = LinearRegression()
-        model.fit(self.niche_sizes[:, None], coefficients[:, None])
+        model.fit(self.niche_sizes[:, None], coefficients)
 
-        alpha = model.coef_[0, 0]
-        beta = model.intercept_[0]
+        alpha = model.coef_[0]
+        beta = model.intercept_
 
         fit = {
-            'coefficients': coefficients,
-            'niche_sizes': self.niche_sizes,
             'alpha': alpha,
             'beta': beta}
         return fit
