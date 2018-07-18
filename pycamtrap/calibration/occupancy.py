@@ -224,9 +224,9 @@ class OccupancyCalibrator(object):
                         xtext, ytext, '{}={}\n{}={}'.format(var2, x, var3, y))
 
                 if m == ncols - 1:
-                    nax.set_xlabel('{}={}'.format(var2, y))
+                    nax.set_xlabel('{}={}'.format(var3, y))
                 if n == 0:
-                    nax.set_ylabel('{}={}'.format(var3, x))
+                    nax.set_ylabel('{}={}'.format(var2, x))
 
                 if m < ncols - 1:
                     nax.xaxis.set_major_formatter(NullFormatter())
