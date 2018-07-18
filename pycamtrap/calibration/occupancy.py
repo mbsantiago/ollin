@@ -90,6 +90,7 @@ class OccupancyCalibrator(object):
             self,
             figsize=(10, 10),
             ax=None,
+            x_var='density',
             w_target=True,
             xscale=None,
             yscale=None):
@@ -99,18 +100,43 @@ class OccupancyCalibrator(object):
         if ax is None:
             fig, ax = plt.subplots(figsize=figsize)
 
-        ncols = len(self.home_ranges)
-        nrows = len(self.niche_sizes)
+        area = self.range[0] * self.range[1]
+
+        density = self.nums / area
+        hr_proportions = self.home_ranges / area
+
+        if x_var == 'density':
+            iterator1 = hr_proportions
+            var2 = 'HRP'
+            iterator2 = self.niche_sizes
+            var3 = 'NS'
+        elif x_var == 'home_range':
+            iterator1 = density
+            var2 = 'D'
+            iterator2 = self.niche_sizes
+            var3 = 'NS'
+        elif x_var == 'niche_sizes':
+            iterator1 = hr_proportions
+            var2 = 'HRP'
+            iterator2 = density
+            var3 = 'D'
+
+        ncols = len(iterator1)
+        nrows = len(iterator2)
         params = self.movement_model.parameters['density']
 
-        area = self.range[0] * self.range[1]
-        density = self.nums / area
-
         counter = 1
-        for m, hr in enumerate(self.home_ranges):
-            for n, nsz in enumerate(self.niche_sizes):
+        for m, x in enumerate(iterator1):
+            for n, y in enumerate(iterator2):
                 nax = plt.subplot(nrows, ncols, counter)
-                data = self.oc_info[m, n, :, :, :]
+
+                if x_var == 'density':
+                    data = self.oc_info[m, n, :, :, :]
+                elif x_var == 'home_range':
+                    data = self.oc_info[:, n, m, :, :]
+                elif x_var == 'niche_sizes':
+                    data = self.oc_info[m, :, n, :, :]
+
                 mean = data.mean(axis=(1, 2))
                 std = data.std(axis=(1, 2))
                 uplim = mean + std
@@ -154,12 +180,24 @@ class OccupancyCalibrator(object):
                     edgecolor='white')
 
                 if w_target:
-                    target = density_to_occupancy(
-                        density,
-                        hr,
-                        nsz,
-                        self.range,
-                        parameters=params)
+                    if x_var == 'density':
+                        target = density_to_occupancy(
+                            density,
+                            x,
+                            y,
+                            parameters=params)
+                    elif x_var == 'home_range':
+                        target = density_to_occupancy(
+                            x,
+                            hr_proportions,
+                            y,
+                            parameters=params)
+                    elif x_var == 'niche_sizes':
+                        target = density_to_occupancy(
+                            y,
+                            x,
+                            self.niche_sizes,
+                            parameters=params)
 
                     if yscale == 'log':
                         target = np.log(target)
@@ -174,12 +212,12 @@ class OccupancyCalibrator(object):
 
                 nax.set_ylim(ylim0, ylim1)
                 nax.set_xlim(xcoords.min(), xcoords.max())
-                nax.text(xtext, ytext, 'HR={} Km^2\nNS={} (%)'.format(hr, nsz))
+                nax.text(xtext, ytext, '{}={}\n{}={}'.format(var2, x, var3, y))
 
                 if m == ncols - 1:
-                    nax.set_xlabel('NS={}'.format(nsz))
+                    nax.set_xlabel('{}={}'.format(var2, x))
                 if n == 0:
-                    nax.set_ylabel('HR={}'.format(hr))
+                    nax.set_ylabel('{}={}'.format(var3, y))
 
                 if m < ncols - 1:
                     nax.xaxis.set_major_formatter(NullFormatter())
@@ -190,7 +228,7 @@ class OccupancyCalibrator(object):
         plt.subplots_adjust(wspace=0, hspace=0)
 
         font = {'fontsize': 18}
-        plt.figtext(0.4, 0.05, "Density (Km^-2)", fontdict=font)
+        plt.figtext(0.4, 0.05, x_var, fontdict=font)
         plt.figtext(0.035, 0.5, "Occupancy (%)", fontdict=font, rotation=90)
         plt.figtext(0.38, 0.92, "Occupancy Calibration", fontdict=font)
         return ax

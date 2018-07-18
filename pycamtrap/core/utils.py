@@ -38,42 +38,34 @@ def velocity_to_home_range(velocity, parameters=None):
 
 def occupancy_to_density(
         occupancy,
-        home_range,
+        home_range_proportion,
         niche_size,
-        range,
         parameters=None):
     alpha = parameters['alpha']
     hr_exp = parameters['hr_exp']
     den_exp = parameters['den_exp']
     nsz_exp = parameters['niche_size_exp']
 
-    area = range[0] * range[1]
-    hr_prop = home_range / area
-
     density = np.exp(
         (logit(occupancy) - alpha -
-         np.log(hr_prop) * hr_exp -
+         np.log(home_range_proportion) * hr_exp -
          np.log(niche_size) * nsz_exp) / den_exp)
     return density
 
 
 def density_to_occupancy(
         density,
-        home_range,
+        home_range_proportion,
         niche_size,
-        range,
         parameters=None):
     alpha = parameters['alpha']
     hr_exp = parameters['hr_exp']
     den_exp = parameters['density_exp']
     nsz_exp = parameters['niche_size_exp']
 
-    area = range[0] * range[1]
-    hr_prop = home_range / area
-
     occupancy = sigmoid(
         alpha + np.log(density) * den_exp +
-        np.log(hr_prop) * hr_exp +
+        np.log(home_range_proportion) * hr_exp +
         np.log(niche_size) + nsz_exp)
     return occupancy
 
