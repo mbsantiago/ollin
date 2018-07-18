@@ -237,7 +237,7 @@ class OccupancyCalibrator(object):
         plt.subplots_adjust(wspace=wspace, hspace=wspace)
 
         font = {'fontsize': 18}
-        plt.figtext(0.4, 0.05, x_var, fontdict=font)
+        plt.figtext(0.4, 0.035, x_var, fontdict=font)
         plt.figtext(0.035, 0.5, "Occupancy (%)", fontdict=font, rotation=90)
         title = "Occupancy Calibration\n{}"
         title = title.format(self.movement_model.name)
@@ -264,7 +264,7 @@ class OccupancyCalibrator(object):
                     X.append(
                         np.stack([np.log(hr_data),
                                   np.log(dens_data),
-                                  logit(nsz_data)], -1))
+                                  np.log(nsz_data)], -1))
         X = np.concatenate(X, 0)
         Y = np.concatenate(Y, 0)
 

@@ -47,7 +47,8 @@ def occupancy_to_density(
     nsz_exp = parameters['niche_size_exp']
 
     density = np.exp(
-        (logit(occupancy) - alpha -
+        (logit(occupancy) -
+         alpha -
          np.log(home_range_proportion) * hr_exp -
          np.log(niche_size) * nsz_exp) / den_exp)
     return density
@@ -64,9 +65,10 @@ def density_to_occupancy(
     nsz_exp = parameters['niche_size_exp']
 
     occupancy = sigmoid(
-        alpha + np.log(density) * den_exp +
+        alpha +
+        np.log(density) * den_exp +
         np.log(home_range_proportion) * hr_exp +
-        logit(niche_size) * nsz_exp)
+        np.log(niche_size) * nsz_exp)
     return occupancy
 
 
