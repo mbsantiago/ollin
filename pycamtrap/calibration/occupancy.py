@@ -95,7 +95,8 @@ class OccupancyCalibrator(object):
             xscale=None,
             yscale=None,
             beta=1,
-            lwidth=0.1):
+            lwidth=0.1,
+            wtext=False):
         import matplotlib.pyplot as plt
         from matplotlib.ticker import NullFormatter
 
@@ -216,7 +217,9 @@ class OccupancyCalibrator(object):
 
                 nax.set_ylim(ylim0, ylim1)
                 nax.set_xlim(xcoords.min(), xcoords.max())
-                nax.text(xtext, ytext, '{}={}\n{}={}'.format(var2, x, var3, y))
+
+                if wtext:
+                    nax.text(xtext, ytext, '{}={}\n{}={}'.format(var2, x, var3, y))
 
                 if m == ncols - 1:
                     nax.set_xlabel('{}={}'.format(var2, x))
