@@ -220,12 +220,13 @@ class OccupancyCalibrator(object):
                 nax.set_xlim(xcoords.min(), xcoords.max())
 
                 if wtext:
-                    nax.text(xtext, ytext, '{}={}\n{}={}'.format(var2, x, var3, y))
+                    nax.text(
+                        xtext, ytext, '{}={}\n{}={}'.format(var2, x, var3, y))
 
                 if m == ncols - 1:
-                    nax.set_xlabel('{}={}'.format(var2, x))
+                    nax.set_xlabel('{}={}'.format(var2, y))
                 if n == 0:
-                    nax.set_ylabel('{}={}'.format(var3, y))
+                    nax.set_ylabel('{}={}'.format(var3, x))
 
                 if m < ncols - 1:
                     nax.xaxis.set_major_formatter(NullFormatter())
