@@ -264,7 +264,7 @@ class OccupancyCalibrator(object):
                     X.append(
                         np.stack([np.log(hr_data),
                                   np.log(dens_data),
-                                  np.log(nsz_data)], -1))
+                                  nsz_data], -1))
         X = np.concatenate(X, 0)
         Y = np.concatenate(Y, 0)
 
