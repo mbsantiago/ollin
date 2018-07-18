@@ -213,7 +213,7 @@ class OccupancyCalibrator(object):
             for j, hr in enumerate(self.home_ranges):
                 for k, dens in enumerate(density):
                     oc_data = data[j, i, k, :, :].ravel()
-                    hr_data = hr * np.ones_like(oc_data)
+                    hr_data = hr * np.ones_like(oc_data) / area
                     dens_data = dens * np.ones_like(oc_data)
                     Y.append(logit(oc_data))
                     X.append(
