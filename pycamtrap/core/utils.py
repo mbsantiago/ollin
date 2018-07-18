@@ -66,7 +66,7 @@ def density_to_occupancy(
     occupancy = sigmoid(
         alpha + np.log(density) * den_exp +
         np.log(home_range_proportion) * hr_exp +
-        np.log(niche_size) + nsz_exp)
+        np.log(niche_size) * nsz_exp)
     return occupancy
 
 
