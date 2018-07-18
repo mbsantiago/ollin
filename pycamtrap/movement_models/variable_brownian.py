@@ -8,23 +8,23 @@ from ..core.utils import normalize
 class Model(MovementModel):
     name = 'Variable Brownian Model'
     default_parameters = {
-        'velocity': {
-            'beta': 0.97,
-            'alpha': 0.0},
-        'home_range': {
-            'alpha': 35.0,
-            'exponent': 0.54},
-        'density': {
-            'alpha': 0.0,
-            'hr_exp': 1.2,
-            'density_exp': 1.75,
-            'niche_size_exp': 1.75},
         'movement': {
             'niche_weight': 0.2},
+        "density": {
+            "alpha": 4.956627725964207,
+            "density_exp": 0.8509470680476414,
+            "hr_exp": 0.8449833387462566,
+            "niche_size_exp": 0.8752336080881222
+            },
+        "home_range": {
+            "alpha": 57.61382053222021,
+            "exponent": 1.9096337585646315
+            },
+        "velocity": {
+            "alpha": 0.14473388093667755,
+            "beta": 0.8918520334954713
+            }
     }
-
-    def __init__(self, parameters=None):
-        super(Model, self).__init__(parameters)
 
     def generate_movement(
             self,

@@ -9,20 +9,23 @@ from .basemodel import MovementModel
 class Model(MovementModel):
     name = 'Gradient Brownian Model'
     default_parameters = {
-        'velocity': {
-            'beta': 0.92,
-            'alpha': 0.0},
-        'home_range': {
-            'alpha': 35.0,
-            'exponent': 0.54},
-        'density': {
-            'alpha': 0.0,
-            'hr_exp': 1.2,
-            'density_exp': 1.75,
-            'niche_size_exp': 1.75},
         'movement': {
             'grad_weight': 10.0,
             'niche_weight': 1.0},
+        "density": {
+            "alpha": 5.054484212556172,
+            "density_exp": 0.8546502084649101,
+            "hr_exp": 0.8556172207468531,
+            "niche_size_exp": 0.9376571357760055
+            },
+        "home_range": {
+            "alpha": 37.23282280460764,
+            "exponent": 1.8750683470837832
+            },
+        "velocity": {
+            "alpha": 0.6601881286894935,
+            "beta": 0.5790070345559946
+            }
     }
 
     def generate_movement(

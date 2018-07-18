@@ -9,24 +9,24 @@ from ..core.utils import normalize
 class Model(MovementModel):
     name = 'Variable Levy Model'
     default_parameters = {
-        'velocity': {
-            'beta': 7.9,
-            'alpha': -3.1},
-        'home_range': {
-            'alpha': 0.08717,
-            'exponent': 0.52921},
-        'density': {
-            'alpha': 0.0,
-            'hr_exp': 1.2,
-            'density_exp': 1.75,
-            'niche_size_exp': 1.75},
         'movement': {
             'min_pareto': 1.1,
             'max_pareto': 1.9},
+        "density": {
+            "alpha": 5.496771005099745,
+            "density_exp": 0.9089427578933271,
+            "hr_exp": 0.9313289770069533,
+            "niche_size_exp": 0.552259555326986
+            },
+        "home_range": {
+            "alpha": 84.94331014956782,
+            "exponent": 1.866467806903153
+            },
+        "velocity": {
+            "alpha": -3.1454639316707027,
+            "beta": 7.029550127524596
+            }
     }
-
-    def __init__(self, parameters=None):
-        super(Model, self).__init__(parameters)
 
     def generate_movement(
             self,

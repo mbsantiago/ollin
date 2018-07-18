@@ -8,23 +8,23 @@ from .basemodel import MovementModel
 class Model(MovementModel):
     name = 'Constant Levy Model'
     default_parameters = {
-        'velocity': {
-            'beta': 1.05,
-            'alpha': 0.0},
-        'home_range': {
-            'alpha': 35.0,
-            'exponent': 0.54},
-        'density': {
-            'alpha': 0.0,
-            'hr_exp': 1.2,
-            'density_exp': 1.75,
-            'niche_size_exp': 1.75},
         'movement': {
             'pareto': 1.8},
+        "density": {
+            "alpha": 5.139654979615388,
+            "density_exp": 0.8673231302202313,
+            "hr_exp": 0.8709250205414867,
+            "niche_size_exp": 0.8105129468063047
+            },
+        "home_range": {
+            "alpha": 82.0335925804581,
+            "exponent": 1.9018678531419373
+            },
+        "velocity": {
+            "alpha": 0.0005826019701355142,
+            "beta": 1.0525954033363216
+            }
     }
-
-    def __init__(self, parameters):
-        super(Model, self).__init__(parameters)
 
     def generate_movement(
             self,

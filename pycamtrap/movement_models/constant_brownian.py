@@ -7,22 +7,22 @@ from .basemodel import MovementModel
 class Model(MovementModel):
     name = 'Constant Brownian Model'
     default_parameters = {
-        'velocity': {
-            'beta': 1.05,
-            'alpha': 0},
-        'home_range': {
-            'alpha': 35.0,
-            'exponent': 0.54},
-        'density': {
-            'alpha': 0.0,
-            'hr_exp': 1.2,
-            'density_exp': 1.75,
-            'niche_size_exp': 1.75},
-        'movement': {}
+        'movement': {},
+        "density": {
+            "alpha": 4.950773510732457,
+            "density_exp": 0.8501718469622543,
+            "hr_exp": 0.8441724458551622,
+            "niche_size_exp": 0.8760285191282491
+            },
+        "home_range": {
+            "alpha": 59.02095500748234,
+            "exponent": 1.903072119815655
+            },
+        "velocity": {
+            "alpha": 0.002223569915673946,
+            "beta": 1.013044346939526
+            }
     }
-
-    def __init__(self, parameters=None):
-        super(Model, self).__init__(parameters)
 
     def generate_movement(
             self,

@@ -9,25 +9,22 @@ from pycamtrap.core.utils import normalize
 class Model(MovementModel):
     name = 'Gradient Levy Model'
     default_parameters = {
-        'velocity': {
-            'beta': 1.55,
-            'alpha': 0.0},
-        'home_range': {
-            'alpha': 35.0,
-            'exponent': 0.54},
-        'density': {
-            'alpha': 0.0,
-            'hr_exp': 1.2,
-            'density_exp': 1.75,
-            'niche_size_exp': 1.75},
+        "density": {
+            "alpha": 5.5687635749135715,
+            "density_exp": 0.9094048898627347,
+            "hr_exp": 0.9442292138564827,
+            "niche_size_exp": 0.5609397724240494},
+        "home_range": {
+            "alpha": 102.95793964057235,
+            "exponent": 1.8355253220927104},
+        "velocity": {
+            "alpha": -1.2919142788970375,
+            "beta": 2.3185432601405385},
         'movement': {
             'min_pareto': 1.1,
             'max_pareto': 1.9,
             'grad_weight': 8.0},
     }
-
-    def __init__(self, parameters):
-        super(Model, self).__init__(parameters)
 
     def generate_movement(
             self,
