@@ -31,8 +31,8 @@ def home_range_to_velocity(home_range, parameters=None):
 
 
 def velocity_to_home_range(velocity, parameters=None):
-    exponent = parameters['home_range']['exponent']
-    alpha = parameters['home_range']['alpha']
+    exponent = parameters['exponent']
+    alpha = parameters['alpha']
     return alpha * velocity**exponent
 
 
