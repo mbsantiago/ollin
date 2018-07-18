@@ -103,6 +103,9 @@ class OccupancyCalibrator(object):
         nrows = len(self.niche_sizes)
         params = self.movement_model.parameters['density']
 
+        area = self.range[0] * self.range[1]
+        density = self.nums / area
+
         counter = 1
         for m, hr in enumerate(self.home_ranges):
             for n, nsz in enumerate(self.niche_sizes):
@@ -113,8 +116,7 @@ class OccupancyCalibrator(object):
                 uplim = mean + std
                 dnlim = mean - std
 
-                area = self.range[0] * self.range[1]
-                density = self.nums / area
+                xcoords = density
 
                 xtext = 0.1
                 ytext = 0.8
@@ -122,7 +124,7 @@ class OccupancyCalibrator(object):
                 ylim0, ylim1 = 0, 1
 
                 if xscale == 'log':
-                    density = np.log(density)
+                    xcoords = np.log(xcoords)
                     xtext = np.log(xtext)
 
                 if yscale == 'log':
@@ -142,10 +144,10 @@ class OccupancyCalibrator(object):
                     ytext = logit(ytext)
 
                 nax.plot(
-                    density,
+                    xcoords,
                     mean)
                 nax.fill_between(
-                    density,
+                    xcoords,
                     dnlim,
                     uplim,
                     alpha=0.6,
@@ -165,19 +167,17 @@ class OccupancyCalibrator(object):
                         target = logit(target)
 
                     nax.plot(
-                        density,
+                        xcoords,
                         target,
                         color='red',
                         label='target')
 
                 nax.set_ylim(ylim0, ylim1)
-                nax.set_xlim(density.min(), density.max())
-
+                nax.set_xlim(xcoords.min(), xcoords.max())
                 nax.text(xtext, ytext, 'HR={} Km^2\nNS={} (%)'.format(hr, nsz))
 
                 if m == ncols - 1:
                     nax.set_xlabel('NS={}'.format(nsz))
-
                 if n == 0:
                     nax.set_ylabel('HR={}'.format(hr))
 
