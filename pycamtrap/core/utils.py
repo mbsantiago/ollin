@@ -54,7 +54,8 @@ def occupancy_to_density(
     area = range[0] * range[1]
     hr_per = home_range / area
 
-    density = (logit(occupancy) - prop - hr_per * hr_exp) / den_exp
+    density = np.exp(
+        (logit(occupancy) - prop - np.log(hr_per) * hr_exp) / den_exp)
     return density
 
 
@@ -76,7 +77,8 @@ def density_to_occupancy(
     area = range[0] * range[1]
     hr_per = home_range / area
 
-    occupancy = sigmoid(prop + density * den_exp + hr_per * hr_exp)
+    occupancy = sigmoid(
+        prop + np.log(density) * den_exp + np.log(hr_per) * hr_exp)
     return occupancy
 
 
