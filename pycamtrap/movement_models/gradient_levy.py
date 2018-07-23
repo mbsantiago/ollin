@@ -29,19 +29,18 @@ class Model(MovementModel):
     def generate_movement(
             self,
             initial_positions,
-            initial_conditions,
-            days,
+            site,
+            steps,
             velocity):
         min_exponent = self.parameters['movement']['min_pareto']
         max_exponent = self.parameters['movement']['max_pareto']
         grad_weight = self.parameters['movement']['grad_weight']
-        heatmap = normalize(initial_conditions.kde_approximation)
+
+        heatmap = site.niche
+        range_ = site.range
+        resolution = site.resolution
+
         gradient = np.stack(np.gradient(heatmap), -1)
-        resolution = initial_conditions.resolution
-        steps_per_day = self.parameters['steps_per_day']
-        range_ = initial_conditions.range
-        velocity = velocity / steps_per_day
-        steps = days * steps_per_day
 
         mov = self._movement(
             gradient,

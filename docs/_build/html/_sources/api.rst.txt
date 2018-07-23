@@ -1,0 +1,37 @@
+*************
+API Reference
+*************
+
+
+.. toctree::
+
+Core
+====
+
+Constants Module
+----------------
+
+.. automodule:: pycamtrap.core.constants
+  :members:
+
+Detection Module
+----------------
+
+.. automodule:: pycamtrap.core.detection
+  :members:
+
+Home Range Module
+-----------------
+
+.. automodule:: pycamtrap.core.home_range
+  :members:
+
+Movement Models
+===============
+
+Base Class
+----------
+
+.. automodule:: pycamtrap.movement_models.basemodel
+  :members:
+

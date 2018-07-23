@@ -5,8 +5,7 @@ import sys
 import numpy as np
 import pycamtrap as pc
 
-from ..core.utils import (home_range_to_velocity,
-                          velocity_to_home_range)
+from ..core.utils import velocity_to_home_range
 
 TRIALS_PER_WORLD = 1000
 NUM_WORLDS = 10
@@ -163,11 +162,10 @@ class Info(object):
         self.num = num
         self.range = range_
 
-
 def get_single_hr_info(info):
-    init = pc.InitialCondition(info.niche_size, range=info.range)
-    mov = pc.MovementData.simulate(
-        init,
+    site = pc.Site.make_random(info.niche_size, range=info.range)
+    mov = pc.Movement.simulate(
+        site,
         num=info.num,
         velocity=info.velocity,
         days=info.movement_model.parameters['hr_days'],

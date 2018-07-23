@@ -1,47 +1,41 @@
-"""Constants for simulator"""
-# INITIAL CONDITION CONSTANTS
-RANGE = 20
-MIN_CLUSTERS = 2
-MAX_CLUSTERS = 10
-MIN_NEIGHBORS = 1
-MAX_NEIGHBORS = 10
-MAX_ITERS = 10
-RESOLUTION = 0.1
+"""Constants module for default values.
 
-# GLOBAL HOME RANGE CONSTANTS
-HR_DAYS = 365
+This module holds all default values for simulator configuration.
 
-# MOVEMENT DATA DEFAULTS
-DAYS = 365
+Attributes
+----------
+GLOBAL_CONSTANTS : dict
+    This dictionary holds all default values unrelated to movement generation,
+    such as the site random generator, default camera configuration
+    variables, etc...
 
-# GLOBAL MOVEMENT CONSTANTS
-STEPS_PER_DAY = 4
+MOVEMENT_PARAMETERS : dict
+    This dictionary holds default values for any movement model. When extending
+    the :py:class:`pycamtrap.movement_models.basemodel.MovementModel` this
+    parameters will be added to the model parameters if no replacement is
+    provided.
 
-# GLOBAL CAMERA CONSTANTS
-CONE_RANGE = 0.01
-CONE_ANGLE = 60
-
-# GLOBAL OCCUPANCY CONSTANTS
-SEASON = 90
+"""
 
 GLOBAL_CONSTANTS = {
-    'range': RANGE,
-    'min_clusters': MIN_CLUSTERS,
-    'max_clusters': MAX_CLUSTERS,
-    'min_neighbors': MIN_NEIGHBORS,
-    'max_neighbors': MAX_NEIGHBORS,
-    'resolution': RESOLUTION,
-    'max_iters': MAX_ITERS,
-    'hr_days': HR_DAYS,
-    'days': DAYS,
-    'cone_range': CONE_RANGE,
-    'cone_angle': CONE_ANGLE,
-    'season': SEASON,
-    'steps_per_day': STEPS_PER_DAY,
+    'range': 20,
+    'min_clusters': 2,
+    'max_clusters': 10,
+    'min_cluster_points': 1,
+    'max_cluster_points': 10,
+    'max_iters': 10,
+    'bandwidth_epsilon': 0.01,
+    'resolution': 0.1,
+    'days': 365,
+    'cone_range': 0.01,
+    'cone_angle': 60,
+    'season': 90,
 }
 
 # CONSTANTS FOR MOVEMENT MODELS
 MOVEMENT_PARAMETERS = {
+    'hr_days': 365,
+    'steps_per_day': 4,
     'velocity': {
         'alpha': 0.0,
         'beta': 1.0},
@@ -55,11 +49,3 @@ MOVEMENT_PARAMETERS = {
         'niche_size_exp': 1.75},
     'movement': {}
 }
-
-
-def handle_global_constants(params):
-    if params is None:
-        params = {}
-    copy = GLOBAL_CONSTANTS.copy()
-    copy.update(params)
-    return copy

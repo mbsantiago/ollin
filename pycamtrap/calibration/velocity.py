@@ -161,9 +161,9 @@ class Info(object):
 
 
 def get_single_velocity_info(info):
-    init = pc.InitialCondition(info.niche_size, range=info.range)
-    mov = pc.MovementData.simulate(
-        init,
+    site = pc.Site.make_random(info.niche_size, range=info.range)
+    mov = pc.Movement.simulate(
+        site,
         num=info.num,
         velocity=info.velocity,
         days=info.movement_model.parameters['hr_days'],

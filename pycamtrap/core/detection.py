@@ -1,55 +1,178 @@
+"""Module for generation of camera configuration and detection data.
+
+Cameras can be placed in a virtual world through a
+:py:class:`CameraConfiguration`. Given a camera configuration and movement
+data, a detection matrix and further detection information can be obtained
+through the :py:class:`Detection` class.
+
+Occupancy and other state variables can then be estimated with such detection
+data.
+"""
 import numpy as np
 from scipy.spatial import Voronoi, voronoi_plot_2d
 
-from constants import handle_global_constants
+from constants import GLOBAL_CONSTANTS
 from pycamtrap.estimation import make_estimate
 
 
 class CameraConfiguration(object):
-    def __init__(self, positions, directions, range=None, parameters=None):
-        parameters = handle_global_constants(parameters)
+    """Camera configuration class holding camera positions and directions.
 
-        self.positions = positions
-        self.directions = directions
+    Attributes
+    ----------
+    positions : array
+        Array of shape [num_cams, 2] to indicate coordinates of each
+        camera.
+    directions : array
+        Array of shape [num_cams, 2] holding a vector of camera direction
+        for each camera.
+    cone_angle : float
+        Viewing angle of cameras in radians.
+    cone_range : float
+        Distance to camera at which detection is posible.
+    range : array
+        Array of shape [2] specifying the dimensions of the virtual world.
+    site: :py:obj:`pycamtrap.Site`
+        Site object holding information about the virtual world.
+    num_cams : int
+        Number of cameras.
 
-        if range is None:
-            range = parameters['range']
+    """
 
-        if isinstance(range, (int, float)):
-            range = np.array([range, range])
-        elif isinstance(range, (tuple, list)):
-            if len(range) == 1:
-                range = [range[0], range[0]]
-            range = np.array(range)
-        self.range = range.astype(np.float64)
+    def __init__(
+            self,
+            positions,
+            directions,
+            site,
+            cone_range=None,
+            cone_angle=None):
+        """Build a camera configuration object.
 
-        self.cone_angle = parameters['cone_angle']
-        self.cone_range = parameters['cone_range']
+        Arguments
+        ---------
+        positions : list or tuple or array
+            Array of shape [num_cams, 2] of camera positions.
+        directions : list or tuple or array
+            Array of shape [num_cams, 2] of camera pointing directions.
+        site : :py:obj:`pycamtrap.core.sites.Site`
+            Site in which to place cameras.
+        cone_range : float, optional
+            Distance to camera at which detection is possible. If not provided
+            it will be extracted from global constants (see
+            :py:const:`pycamtrap.core.constants.GLOBAL_CONSTANTS`).
+        cone_angle : float, optional
+            Viewing angle of camera in radians. Default behaviour is as with
+            cone_range.
+
+        """
+        self.positions = np.array(positions)
+        self.directions = np.array(directions)
+
+        self.range = site.range.astype(np.float64)
+        self.site = site
+
+        if cone_angle is None:
+            cone_angle = GLOBAL_CONSTANTS['cone_angle']
+        self.cone_angle = cone_angle
+
+        if cone_range is None:
+            cone_range = GLOBAL_CONSTANTS['cone_range']
+        self.cone_range = cone_range
+
         self.num_cams = len(positions)
+
+    def detect(self, mov):
+        """Use camera configuration to detect movement history.
+
+        Arguments
+        ---------
+        mov : :py:obj:`pycamtrap.core.movement.Movement`
+            Movement data object to be detected by the camera configuration.
+
+        Returns
+        -------
+        data : :py:obj:`MovementDetection`
+            Camera detection information.
+
+        """
+        data = MovementDetection(self, mov)
+        return data
 
     def plot(
             self,
             ax=None,
-            cone_length=None,
-            show_cones=True,
-            vor=None,
-            alpha=0.3):
+            figsize=(10, 10),
+            include=None,
+            cone_length=0.4,
+            camera_alpha=0.3,
+            **kwargs):
+        """Draw camera positions and orientations.
+
+        This method will make a plot representing the camera positions and
+        orientations in the virtual world. To help visualize the cameras
+        corresponding territory Voronoi cells of camera points will be plotted.
+
+        Camera configuration plot adds two components:
+            1. "cameras":
+                If present in include list, camera position with cone of
+                detection will be added to the plot.
+            2. "camera_voronoi":
+                If present in include list, Voronoi cells for each camera will
+                be added to the plot.
+
+        All other components in the include list will be handed down to the
+        Site's plotting method. See
+        :py:meth:`pycamtrap.core.sites.Site.plot` to
+        consult all plotting components defined at that level.
+
+        Arguments
+        ---------
+        ax : :py:obj:`matplotlib.axes.Axes`, optional
+            Axes in which to plot camera info. New axes will be created if none
+            are provided.
+        figsize : tuple or list, optional
+            Size of figure, if ax is not provided. See figsize argument in
+            :py:func:`matplotlib.pyplot.figure`.
+        include: list or tuple, optional
+            List of components to plot. Components list will be passed first
+            to the Site object to add the corresponding
+            components. Then components corresponding to CameraConfiguration
+            included in the list will be plotted.
+        cone_length : float, optional
+            Length of camera cone for visualization purposes. Defaults to 0.4
+            km.
+        camera_alpha : float, optional
+            Alpha value for camera cones.
+        kwargs : dict
+            Other keyworded arguments will be passed to the CameraConfiguration
+            plot method.
+
+        Returns
+        -------
+        ax : :py:obj:`matplotlib.axes.Axes`
+            Axes of plot for further processing.
+
+        """
         import matplotlib.pyplot as plt
         from matplotlib.patches import Wedge
         from matplotlib.collections import PatchCollection
 
         if ax is None:
-            fig, ax = plt.subplots(figsize=(10, 10))
-            ax.set_xticks((0, self.range[0]))
-            ax.set_yticks((0, self.range[1]))
+            fig, ax = plt.subplots(figsize=figsize)
 
-        if vor is None:
+        if include is None:
+            include = [
+                'rectangle',
+                'cameras',
+                'camera_voronoi']
+
+        self.site.plot(ax=ax, include=include, **kwargs)
+
+        if 'camera_voronoi' in include:
             vor = Voronoi(self.positions)
-        voronoi_plot_2d(vor, show_vertices=False, ax=ax)
-        ax.set_xlim(0, self.range[0])
-        ax.set_ylim(0, self.range[1])
+            voronoi_plot_2d(vor, show_vertices=False, ax=ax)
 
-        if show_cones:
+        if 'cameras' in include:
             if cone_length is None:
                 cone_length = self.cone_range
 
@@ -59,26 +182,49 @@ class CameraConfiguration(object):
                 ang = 180 * np.angle(angle[0] + 1j * angle[1]) / np.pi
                 wedge = Wedge(pos, cone_length, ang - c_angle, ang + c_angle)
                 patches.append(wedge)
-            collection = PatchCollection(patches, cmap=plt.cm.hsv, alpha=alpha)
+            collection = PatchCollection(
+                patches, cmap=plt.cm.hsv, alpha=camera_alpha)
             ax.add_collection(collection)
+
         return ax
 
     @classmethod
-    def make_random(cls, num, range=None, min_distance=None, parameters=None):
-        if parameters is None:
-            parameters = {}
-        parameters = handle_global_constants(parameters)
+    def make_random(
+            cls,
+            num,
+            site,
+            min_distance=None,
+            cone_range=None,
+            cone_angle=None):
+        """Place cameras randomly in range.
 
-        if range is None:
-            range = parameters['range']
+        Will create a number of cameras placed at random with random
+        directions. If min_distance option is passed, then camera positions
+        will be chosen so that any two are not closer that min_distance.
 
-        if isinstance(range, (int, float)):
-            range = np.array([range, range])
-        elif isinstance(range, (tuple, list)):
-            if len(range) == 1:
-                range = [range[0], range[0]]
-            range = np.array(range)
-        range = range.astype(np.float64)
+        Arguments
+        ---------
+        num : int
+            Number of cameras to place.
+        site : :py:obj:`pycamtrap.core.sites.Site`
+            Site in which to place cameras.
+        min_distance : float, optional
+            Minimum distance in between cameras.
+        cone_range : float, optional
+            Distance to camera at which detection is possible. If not provided
+            it will be extracted from the global constants, see
+            :py:const:`pycamtrap.core.constants.GLOBAL_CONSTANTS`.
+        cone_angle : float, optional
+            Viewing angle of camera in radians. Default behaviour is as with
+            cone_range.
+
+        Returns
+        -------
+        camera : :py:obj:`CameraConfiguration`
+            Camera configuration object with random positions and directions.
+
+        """
+        range = site.range.astype(np.float64)
 
         if min_distance is None:
             positions_x = np.random.uniform(0, range[0], size=(num))
@@ -88,16 +234,52 @@ class CameraConfiguration(object):
             positions = make_random_camera_positions(
                 num, range, min_distance=min_distance)
         angles = make_random_directions(num)
-        return cls(positions, angles, range=range, parameters=parameters)
+        cam = cls(
+            positions,
+            angles,
+            site,
+            cone_range=cone_range,
+            cone_angle=cone_angle)
+        return cam
 
     @classmethod
-    def make_grid(cls, distance, range=None, parameters=None):
-        if parameters is None:
-            parameters = {}
-        parameters = handle_parameters(parameters)
+    def make_grid(
+            cls,
+            distance,
+            range=None,
+            cone_range=None,
+            cone_angle=None):
+        """Place grid of cameras in virtual world.
 
+        Place cameras in a square grid configuration in range of virtual world,
+        parallel to the x and y axis, separated by some distance. Camera
+        directions will be random.
+
+        Arguments
+        ---------
+        distance : float
+            Distance between adjacent cameras in grid.
+        range : list or tuple or array, optional
+            Array of shape [2] specifying the dimensions of the virtual world
+            in which to place the cameras. If an int "a" is passed the
+            resulting range will be [a, a]. If not provided
+            it will be extracted from global constants (see
+            :py:const:`pycamtrap.core.constants.GLOBAL_CONSTANTS`).
+        cone_range : float, optional
+            Distance to camera at which detection is possible. Default
+            behaviour is as with range.
+        cone_angle : float, optional
+            Viewing angle of camera in radians. Default behaviour is as with
+            range.
+
+        Returns
+        -------
+        camera : :py:obj:`CameraConfiguration`
+            Camera configuration object in square grid configuration.
+
+        """
         if range is None:
-            range = parameters['range']
+            range = GLOBAL_CONSTANTS['range']
 
         if isinstance(range, (int, float)):
             range = np.array([range, range])
@@ -121,10 +303,40 @@ class CameraConfiguration(object):
         positions = positions.reshape([-1, 2])
         num = positions.size / 2
         angles = make_random_directions(num)
-        return cls(positions, angles, range=range, parameters=parameters)
+        cam = cls(
+            positions,
+            angles,
+            range=range,
+            cone_angle=cone_angle,
+            cone_range=cone_range)
+        return cam
 
 
-def make_random_camera_positions(num, range, min_distance=1.0):
+def make_random_camera_positions(num, range, min_distance):
+    """Create and return n random points in range separated by min distance.
+
+    Arguments
+    ---------
+    num : int
+        Number of points to create.
+    range : tuple or list or array
+        Shape of range. range = (a, b) means points will be taken from a a x b
+        square.
+    min_distance : float
+        Distance of minimum separation between points.
+
+    Returns
+    -------
+    points : array
+        Array of shape [num, 2] holding the (x, y) coordinates of points.
+
+    Raises
+    ------
+    RuntimeError
+        If too many cameras are being placed so that minimum distance
+        restriction has to be broken.
+
+    """
     random_points_x = np.random.uniform(range[0]/10.0, size=[10, 10, 10])
     random_points_y = np.random.uniform(range[0]/10.0, size=[10, 10, 10])
     random_points = np.stack([random_points_x, random_points_y], -1)
@@ -153,121 +365,352 @@ def make_random_camera_positions(num, range, min_distance=1.0):
                 selection.append(point)
                 break
         if not selected:
-            raise Exception('No funciono')
+            raise RuntimeError('Cameras dont fit.')
 
     return np.array(selection)
 
 
 def make_random_directions(num):
+    """Create and return n random direction vectors."""
     angles = np.random.uniform(0, 2*np.pi, size=[num])
     directions = np.stack([np.cos(angles), np.sin(angles)], -1)
     return directions
 
 
 class Detection(object):
-    def __init__(self, mov, cam):
-        self.movement_data = mov
-        self.camera_config = cam
+    """Class holding camera detection information.
 
-        self.steps = mov.steps
-        self.num_experiments = mov.num_experiments
-        self.range = mov.initial_conditions.range
-        self.grid = make_detection_data(mov, cam)
-        self.detections = np.amax(self.grid, axis=1)
-        self.detection_nums = self.detections.sum(axis=1)
+    Cameras left at site (virtual or real) will make detections at diferent
+    steps in time. Which cameras detected when can be stored in a binary
+    matrix. This matrix can then be used for estimation of state variables.
 
-    def estimate(self, type='stan'):
-        return make_estimate(self, type=type)
+    Attributes
+    ----------
+    camera_config : :py:obj:`CameraConfiguration`
+        The camera configuration for the detection data.
+    range : array
+        Array of shape [2] that holds the dimensions of site.
+    detections : array
+        Array of shape [steps, num_cams] containing the
+        detection information. If::
+
+            detections[j, i] = 1
+
+        then the i-th camera had an detection event at the j-th time step.
+    detection_nums : array
+        Array of shape [num_cams] with the total number of
+        detections for each camera.
+
+    """
+
+    def __init__(self, cam, detections):
+        """Construct detection data object.
+
+        Arguments
+        ---------
+        cam : :py:obj:`CameraConfiguration`
+            Camera configuration.
+        detections : array
+            Array of shape [num_cams, steps] holding the detection
+            information.
+
+        """
+        self.camera_configuration = cam
+        self.range = cam.range
+
+        msg = 'Detection array shape implies a different number of cameras'
+        msg += ' to number reported from camera configuration'
+        assert cam.num_cams == detections.shape[-1], msg
+
+        self.detections = detections
+        self.detection_nums = self.detections.sum(axis=0)
+
+    def estimate_occupancy(self, type='stan'):
+        """Estimate occupancy and detectability from detection data.
+
+        Use one of the estimation methods to estimate occupancy and
+        detectability, see (:py:mod:`pycamtrap.estimation`)
+
+        Arguments
+        ---------
+            type : str
+                Name of estimation method to use. See
+                :py:mod:`pycamtrap.estimation` documentation for a full list.
+        Returns
+        -------
+            estimate : :py:obj:`pycamtrap.estimation.Estimate`
+                Estimate object containing estimation information.
+
+        """
+        return make_estimate(self.detections, type=type)
 
     def plot(
             self,
             ax=None,
-            plot_cameras=True,
-            cone_length=None,
-            cmap='Purples',
-            colorbar=True,
-            movement=False,
-            alpha=0.2,
-            experiment_number=0):
+            figsize=(10, 10),
+            include=None,
+            detection_cmap='Purples',
+            detection_alpha=0.2,
+            **kwargs):
+        """Plot camera detection data.
+
+        Plots number of detections per camera by coloring the correponding
+        Voronoi cell. The number of detections are transformed to [0, 1] scale
+        and mapped to a color using a colormap.
+
+        Detection plotting adds the following optional components to the plot:
+            1. "detection:
+                If present in include list Voronoi regions with color fill,
+                encoding the corresponding detection numbers, will be added to
+                the plot.
+            2. "detection_colorbar":
+                If present in include list a colorbar representing the mapping
+                between detection numbers and colors will be added to the plot.
+
+        All other components in the include list will be handed down to the
+        CameraConfiguration plotting method. See
+        :py:meth:`CameraConfiguration.plot` to see all plotting components
+        defined there.
+
+        Arguments
+        ---------
+        ax : :py:obj:`matplotlib.axes.Axes`, optional
+            Axes object in which to plot detection information.
+        figsize: list or tuple, optional
+            Size of figure to create if no axes object was given.
+        include: list or tuple, optional
+            List of components to plot. Components list will be passed first
+            to the Camera Configuration object to add the corresponding
+            components. Then components corresponding to CameraConfiguration
+            included in the list will be plotted.
+        detection_cmap : str, optional
+            Colormap with which to encode detection numbers. See
+            :py:mod:`matplotlib.cm` to see all options. Defaults to 'Purples'.
+        detection_alpha : float, optional
+            Alpha value of Voronoi region's color fill.
+        kwargs : dict, optional
+            Any additional keyworded arguments will be passed to the Camera
+            Configuration plot method.
+
+        Returns
+        -------
+        ax : :py:obj:`matplotlib.axes.Axes`
+            Plot axes for further plotting.
+
+        """
         import matplotlib.pyplot as plt
         from matplotlib.cm import ScalarMappable
         from matplotlib.colors import Normalize
 
-        vor = Voronoi(self.camera_config.positions)
         if ax is None:
             fig, ax = plt.subplots(figsize=(10, 10))
-            ax.set_xticks((0, self.range[0]))
-            ax.set_yticks((0, self.range[1]))
 
-        cmap = plt.get_cmap(cmap)
-        max_num = self.detection_nums.max()
-        regions, vertices = voronoi_finite_polygons_2d(vor)
-        if experiment_number == 'mean':
-            nums = self.detection_nums.mean(axis=0)
-        else:
-            nums = self.detection_nums[experiment_number]
-        for reg, num in zip(regions, nums):
-            polygon = vertices[reg]
-            X, Y = zip(*polygon)
-            color = cmap(num / float(max_num))
-            ax.fill(X, Y, color=color, alpha=alpha)
+        if include is None:
+            include = [
+                'rectangle',
+                'camera',
+                'detection',
+                'detection_colorbar']
 
-        if movement:
-            self.movement_data.plot(ax=ax)
+        self.camera_configuration.plot(ax=ax, include=include, **kwargs)
 
-        if colorbar:
-            norm = Normalize(vmin=0, vmax=max_num)
-            mappable = ScalarMappable(norm, cmap)
-            mappable.set_array(self.detection_nums)
-            plt.colorbar(mappable, ax=ax)
+        if 'detection' in include:
+            vor = Voronoi(self.camera_configuration.positions)
+            cmap = plt.get_cmap(detection_cmap)
+            max_num = self.detection_nums.max()
+            regions, vertices = voronoi_finite_polygons_2d(vor)
+            nums = self.detection_nums
+            for reg, num in zip(regions, nums):
+                polygon = vertices[reg]
+                X, Y = zip(*polygon)
+                color = cmap(num / float(max_num))
+                ax.fill(X, Y, color=color, alpha=detection_alpha)
 
-        if plot_cameras:
-            self.camera_config.plot(
-                ax=ax,
-                vor=vor,
-                alpha=alpha,
-                cone_length=cone_length)
+            if 'detection_colorbar' in include:
+                norm = Normalize(vmin=0, vmax=max_num)
+                mappable = ScalarMappable(norm, cmap)
+                mappable.set_array(self.detection_nums)
+                plt.colorbar(mappable, ax=ax)
 
         return ax
 
 
-def make_detection_data(movement_data, camera_config):
+class MovementDetection(Detection):
+    """Class holding detection data arising from movement data.
+
+    From camera placement and movement data, camera detection data can be
+    calculated and collected into an array of shape [num_individuals,
+    time_steps, num_cameras]. Here::
+
+        array[j, i, k] = 1
+
+    indicates that at the i-th step the j-th
+    individual was detected by the k-th camera. Hence more detailed
+    analysis is posible from such data.
+
+    Attributes
+    ----------
+    camera_config : :py:obj:`CameraConfiguration`
+        The camera configuration for the detection data.
+    range : array
+        Array of shape [2] that holds the dimensions of site.
+    detections : array
+        Array of shape [steps, num_cam] containing the detection information.
+        Here::
+
+            detections[j, i] = 1
+
+        means that the i-th camera had an detection event at the j-th time
+        step.
+    detection_nums : array
+        Array of shape [num_cams] with the total number of detections for each
+        camera.
+    movement : :py:obj:`pycamtrap.core.movement.Movement`
+        Movement data being detected.
+    grid : array
+        Array of shape [num_individuals, time_steps, num_cameras] holding all
+        detection data.
+
+    """
+
+    def __init__(self, mov, cam):
+        """Construct MovementDetection object.
+
+        Arguments
+        ---------
+        mov : :py:obj:`pycamtrap.core.movement.Movement`
+            Movement data being detected.
+        cam : :py:obj:`CameraConfiguration`
+            Cameras used for detection.
+
+        """
+        msg = "Camera range and movement range do not coincide"
+        assert (cam.range == mov.range).all(), msg
+
+        self.movement = mov
+        self.grid = make_detection_data(mov, cam)
+        detections = np.amax(self.grid, axis=0)
+
+        super(MovementDetection, self).__init__(cam, detections)
+
+    def plot(self, ax=None, figsize=(10, 10), include=None, **kwargs):
+        """Plot camera detection data.
+
+        Plots number of detections per camera by coloring the correponding
+        Voronoi cell. The number of detections are transformed to [0, 1] scale
+        and mapped to a color using a colormap.
+
+        Detection plotting adds the following optional components to the plot:
+            1. "detection:
+                If present in include list Voronoi regions with color fill,
+                encoding the corresponding detection numbers, will be added to
+                the plot.
+            2. "detection_colorbar":
+                If present in include list a colorbar representing the mapping
+                between detection numbers and colors will be added to the plot.
+
+        All other components in the include list will be passed down to the
+        Movement plotting method. See
+        :py:meth:`pycamtrap.core.movement.Movement.plot` for all plot
+        components defined at that level.
+
+        Arguments
+        ---------
+        ax : :py:obj:`matplotlib.axes.Axes`, optional
+            Axes object in which to plot detection information.
+        figsize: list or tuple, optional
+            Size of figure to create if no axes object was given.
+        include: list or tuple, optional
+            List of components to plot. Components list will be passed first
+            to the Movement Data object to add the corresponding
+            components. Then components corresponding to Movement
+            included in the list will be plotted.
+        kwargs: dict, optional
+            All other keyworded arguments will be passed to Detection and
+            Movement plotting methods.
+
+        Returns
+        -------
+        ax : :py:obj:`matplotlib.axes.Axes`
+            Returns axes for further plotting.
+
+        """
+        import matplotlib.pyplot as plt
+        if ax is None:
+            fig, ax = plt.subplots(figsize=figsize)
+            ax.set_xticks((0, self.range[0]))
+            ax.set_yticks((0, self.range[1]))
+
+        if include is None:
+            include = [
+                'rectangle',
+                'camera',
+                'camera_voronoi',
+                'detection',
+                'detection_colorbar']
+
+        self.movement.plot(ax=ax, include=include, **kwargs)
+        super(MovementDetection, self).plot(
+            ax=ax, include=include, **kwargs)
+        return ax
+
+
+def make_detection_data(movement, camera_config):
+    """Generate and return detection data from movement and camera data.
+
+    Movement data is held in the
+    :py:class:`pycamtrap.core.movement.Movement` object and is represented
+    by an array of shape [num_individuals, time_steps, 2], which contains the
+    full history of movement along the simulated time.
+
+    Use movement history, camera placement and directions to calculate an array
+    of shape [num_individuals, time_steps, num_cams] where::
+
+        array[j, k, i] = 1
+
+    implies that the j-th individual was within the detection cone of the i-th
+    camera at the k-th time step.
+
+    Arguments
+    ---------
+    movement : :py:obj:`pycamtrap.core.movement.Movement`
+        Movement of individuals to detect.
+    camera_config : :py:obj:`CameraConfiguration`
+        Camera position and directions to use for detection
+
+    Returns
+    -------
+    grid : array
+        Array of shape [num_individuals, time_steps, num_cameras].
+
+    """
     camera_position = camera_config.positions
     camera_direction = camera_config.directions
     camera_direction = camera_direction[:, 0] + 1j * camera_direction[:, 1]
-    num_cameras = len(camera_position)
 
-    movement_data = movement_data.data
-    num_experiments, num, steps, _ = movement_data.shape
+    movement_data = movement.data
+    num, steps, _ = movement_data.shape
     cone_range = camera_config.cone_range
     cone_angle = camera_config.cone_angle
 
-    grid = np.zeros((num_experiments, num, steps, num_cameras))
+    relative_pos = (movement_data[:, :, None, :] -
+                    camera_position[None, None, :, :])
+    relative_pos = relative_pos[:, :, :, 0] + 1j * relative_pos[:, :, :, 1]
+    norm = np.abs(relative_pos)
+    closeness = np.less(norm, cone_range)
 
-    for k in xrange(num_experiments):
-        species_movement = movement_data[k, :, :, :]
+    angles = np.abs(np.angle(relative_pos / camera_direction, deg=1))
+    is_in_angle = np.less(angles, cone_angle / 2.0, where=closeness)
 
-        relative_pos = (species_movement[:, :, None, :] -
-                        camera_position[None, None, :, :])
-        relative_pos = relative_pos[:, :, :, 0] + 1j * relative_pos[:, :, :, 1]
-        norm = np.abs(relative_pos)
-        closeness = np.less(norm, cone_range)
-
-        angles = np.abs(np.angle(relative_pos / camera_direction, deg=1))
-        is_in_angle = np.less(angles, cone_angle / 2.0, where=closeness)
-
-        detected = closeness * is_in_angle
-        grid[k, :, :, :] = detected
-    return grid
+    detected = closeness * is_in_angle
+    return detected
 
 
 def voronoi_finite_polygons_2d(vor, radius=None):
-    """
-    Reconstruct infinite voronoi regions in a 2D diagram to finite
-    regions.
+    """Reconstruct infinite voronoi regions in a 2D diagram to finite regions.
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     vor : Voronoi
         Input diagram
     radius : float, optional
@@ -283,7 +726,6 @@ def voronoi_finite_polygons_2d(vor, radius=None):
         end.
 
     """
-
     if vor.points.shape[1] != 2:
         raise ValueError("Requires 2D input")
 

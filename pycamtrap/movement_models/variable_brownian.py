@@ -29,16 +29,14 @@ class Model(MovementModel):
     def generate_movement(
             self,
             initial_positions,
-            initial_conditions,
-            days,
+            site,
+            steps,
             velocity):
         niche_weight = self.parameters['movement']['niche_weight']
-        heatmap = normalize(initial_conditions.kde_approximation)
-        resolution = initial_conditions.resolution
-        steps_per_day = self.parameters['steps_per_day']
-        range_ = initial_conditions.range
-        velocity = velocity / steps_per_day
-        steps = days * steps_per_day
+
+        heatmap = site.niche
+        resolution = site.resolution
+        range_ = site.range
 
         mov = self._movement(
             heatmap,

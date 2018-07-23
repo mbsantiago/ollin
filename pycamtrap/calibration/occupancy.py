@@ -7,9 +7,9 @@ import numpy as np
 import pycamtrap as pc
 
 from ..core.utils import density_to_occupancy, logit
+from ..core.constants import GLOBAL_CONSTANTS
 
 
-RANGE = 20
 TRIALS_PER_WORLD = 100
 MAX_INDIVIDUALS = 10000
 NUM_WORLDS = 10
@@ -27,7 +27,8 @@ class OccupancyCalibrator(object):
             nums=NUMS,
             trials_per_world=TRIALS_PER_WORLD,
             num_worlds=NUM_WORLDS,
-            range=RANGE,
+            range=GLOBAL_CONSTANTS['range'],
+            season=GLOBAL_CONSTANTS['season'],
             max_individuals=MAX_INDIVIDUALS):
 
         self.movement_model = movement_model
@@ -37,6 +38,7 @@ class OccupancyCalibrator(object):
         self.trials_per_world = trials_per_world
         self.num_worlds = num_worlds
         self.max_individuals = max_individuals
+        self.season = season
         if isinstance(range, (int, float)):
             range = (range, range)
         self.range = range
@@ -51,11 +53,12 @@ class OccupancyCalibrator(object):
         nw = self.num_worlds
         mov = self.movement_model
         mx_ind = self.max_individuals
+        season = self.season
 
         all_info = np.zeros(
                 [n_hr, n_nsz, n_num, nw, tpw])
         arguments = [
-                Info(mov, hr, nsz, self.nums, tpw, self.range, mx_ind)
+                Info(mov, hr, nsz, self.nums, tpw, self.range, season, mx_ind)
                 for hr in self.home_ranges
                 for nsz in self.niche_sizes
                 for k in xrange(self.num_worlds)]
@@ -292,6 +295,7 @@ class Info(object):
         'nums',
         'trials',
         'range',
+        'season',
         'max_individuals']
 
     def __init__(
@@ -302,6 +306,7 @@ class Info(object):
             nums,
             trials,
             range_,
+            season,
             max_individuals):
 
         self.movement_model = movement_model
@@ -309,17 +314,18 @@ class Info(object):
         self.niche_size = niche_size
         self.nums = nums
         self.max_individuals = max_individuals
+        self.season = season
         self.trials = trials
         self.range = range_
 
 
 def get_single_oc_info(info):
-    init = pc.InitialCondition(info.niche_size, range=info.range)
-    mov = pc.MovementData.simulate(
-        init,
+    site = pc.Site.make_random(info.niche_size, range=info.range)
+    mov = pc.Movement.simulate(
+        site,
         num=info.max_individuals,
         home_range=info.home_range,
-        days=info.movement_model.parameters['season'],
+        days=info.season,
         movement_model=info.movement_model)
 
     n_nums = len(info.nums)
@@ -329,6 +335,6 @@ def get_single_oc_info(info):
         for k in xrange(info.trials):
             submov = mov.sample(num)
             oc = pc.Occupancy(submov)
-            results[n, k] = oc.get_mean_occupancy()
+            results[n, k] = oc.get_occupancy()
 
     return results
