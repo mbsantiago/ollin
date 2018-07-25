@@ -1,10 +1,10 @@
-.. pycamtrap documentation master file, created by
+.. ollin documentation master file, created by
    sphinx-quickstart on Wed Jul 18 15:11:33 2018.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
 *************************************
-Welcome to pycamtrap's documentation!
+Welcome to ollin's documentation!
 *************************************
 
 .. toctree::
@@ -12,7 +12,6 @@ Welcome to pycamtrap's documentation!
   :caption: Contents:
 
   api/api
-
 
 ******************
 Indices and tables

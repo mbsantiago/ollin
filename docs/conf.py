@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
-project = u'pycamtrap'
+project = u'ollin'
 copyright = u'2018, CONABIO, Santiago Martínez'
 author = u'CONABIO, Santiago Martínez'
 
@@ -81,9 +81,9 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'classic'
+html_theme = 'sphinxdoc'
 
-html_logo = '_static/conabio.png'
+html_logo = '_static/ollin.jpg'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -110,7 +110,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'pycamtrapdoc'
+htmlhelp_basename = 'ollindoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -137,7 +137,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'pycamtrap.tex', u'pycamtrap Documentation',
+    (master_doc, 'ollin.tex', u'ollin Documentation',
      u'CONABIO, Santiago Martínez', 'manual'),
 ]
 
@@ -147,7 +147,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'pycamtrap', u'pycamtrap Documentation',
+    (master_doc, 'ollin', u'ollin Documentation',
      [author], 1)
 ]
 
@@ -158,8 +158,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'pycamtrap', u'pycamtrap Documentation',
-     author, 'pycamtrap', 'One line description of project.',
+    (master_doc, 'ollin', u'ollin Documentation',
+     author, 'ollin', 'One line description of project.',
      'Miscellaneous'),
 ]
 
