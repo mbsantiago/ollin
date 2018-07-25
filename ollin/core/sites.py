@@ -98,7 +98,7 @@ class BaseSite(object):
                     colors=boundary_color)
 
             if 'niche' in include:
-                plt.pcolormesh(
+                ax.pcolormesh(
                     rangex,
                     rangey,
                     self.niche.T,
