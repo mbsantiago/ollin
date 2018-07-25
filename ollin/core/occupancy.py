@@ -59,10 +59,13 @@ per time step, number of times a cell was visited and others, are stored within
 a :py:obj:`Occupancy` object.
 
 """
+from __future__ import division
+
+from six.moves import xrange
 import numpy as np
 from numba import jit, float64
 
-from utils import occupancy_resolution
+from .utils import occupancy_resolution
 
 
 class Occupancy(object):
@@ -90,11 +93,22 @@ class Occupancy(object):
         Spatial resolution (in Km) for site discretization.
     grid : array
         Array of shape [time_steps, x, y] where [x, y] is the
-        size of the discretized site. Holds cell ocupancy at
+        size of the discretized site. Holds cell occupation at
         each time step.
     """
 
-    def __init__(self, movement, grid=None, resolution=None):
+    def __init__(self, movement, resolution=None):
+        """Construct Occupancy object.
+
+        Arguments
+        ---------
+        movement : :py:obj:`ollin.MovementData`
+            Movement data to be analized.
+        resolution : float, optional
+            Resolution for space discretization. If none is given,
+            resolution will be calculated from home_range data
+            stored in the movement data.
+        """
         self.movement = movement
         self.steps = movement.steps
 
@@ -102,40 +116,91 @@ class Occupancy(object):
             resolution = occupancy_resolution(movement.home_range)
         self.resolution = resolution
 
-        if grid is None:
-            grid = make_grid(self.movement, self.resolution)
-        self.grid = grid
+        self.grid = make_grid(self.movement, self.resolution)
 
     def get_occupancy_nums(self):
+        """Get number of cell occupation events, per cell."""
         occupancy_nums = np.sum(self.grid, axis=0)
         return occupancy_nums
 
     def get_occupancy(self):
+        """Get occupancy."""
         occupancy_nums = self.get_occupancy_nums()
         occupancy = np.mean(occupancy_nums / float(self.steps))
         return occupancy
 
     def plot(
             self,
-            include=None,
             ax=None,
+            figsize=(10, 10),
+            include=None,
             occupancy_cmap='Blues',
             occupancy_level=0.2,
             occupancy_alpha=0.3,
             **kwargs):
+        """Plot discretized space occupancy information.
+
+        Occupancy plotting adds the following optional components to the
+        plot:
+
+        1. "occupancy":
+            If present in include list, cells of discretized space will be
+            shown with a color representing the rate of occupation of such
+            cell. Colors will be selected using a color map. See
+            :py:mod:`matplotlib.cm` to see all colormap options.
+        2. "occupancy_contour":
+            If present in include list, the border of the region containing all
+            cells with occupancy heigher than some threshold will be plotted.
+
+        All other components in the include list will be passed down to the
+        MovementData plotting method. See :py:meth:`ollin.MovementData.plot`
+        for all plot components defined at that level.
+
+        Arguments
+        ---------
+        ax : :py:obj:`matplotlib.axes.Axes`, optional
+            Axes object in which to plot occupancy information.
+        figsize : list or tuple, optional
+            Size of figure to create if no axes object was given. Defaults to
+            (10, 10).
+        include : list or tuple, optional
+            List of components to add to the plot. Components list will be
+            passed to the Site object to add the corresponding components.
+        occupancy_cmap : str, optional
+            Colormap to use to codify occupancy level to color. Defaults to
+            'Blues'.
+        occupancy_level : float, optional
+            Threshold at which to draw boundary for occupancy contour.
+        occupancy_alpha : float, optional
+            Alpha value of cell colors.
+        kwargs : dict, optional
+            All other keyworded arguments will be passed to the MovementData's
+            plotting method.
+
+        Returns
+        -------
+        ax : :py:obj:`matplotlib.axes.Axes`
+            Return axes for further plotting.
+
+        """
         import matplotlib.pyplot as plt  # pylint: disable=import-error
         if ax is None:
-            fig, ax = plt.subplots(figsize=(10, 10))
+            fig, ax = plt.subplots(figsize=figsize)
 
         if include is None:
             include = [
-                'rectangle', 'niche', 'occupancy', 'occupancy_contour']
+                'rectangle',
+                'niche_boundary',
+                'occupancy',
+                'occupancy_contour']
+
+        self.movement.plot(include=include, ax=ax, **kwargs)
 
         if 'occupancy' in include:
             grid = self.get_occupancy_nums()
             grid = grid / float(self.steps)
 
-            range_ = self.movement_data.site.range
+            range_ = self.movement.site.range
             h, w = grid.shape
             xcoord, ycoord = np.meshgrid(
                 np.linspace(0, range_[0], h),
@@ -154,8 +219,6 @@ class Occupancy(object):
                 mask = (grid >= occupancy_level)
                 ax.contour(xcoord, ycoord, mask.T, levels=[0.5], cmap='Blues')
 
-        self.movement_data.plot(include=include, ax=ax, **kwargs)
-
         return ax
 
 
@@ -172,7 +235,16 @@ def _make_grid(array, range, resolution):
     num, steps, _ = array.shape
 
     space = np.zeros((steps, num_sides_x, num_sides_y))
-    indices = np.floor_divide(array, resolution).astype(np.int64)
+
+    denominator = np.zeros((2,))
+    denominator[0] = range[0] / num_sides_x
+    denominator[1] = range[1] / num_sides_y
+    indices = np.floor_divide(array, denominator).astype(np.int64)
+
+    disc_range = np.zeros((2,), dtype=np.int64)
+    disc_range[0] = num_sides_x - 1
+    disc_range[1] = num_sides_y - 1
+    indices = np.minimum(indices, disc_range)
 
     for s in xrange(steps):
         for i in xrange(num):
@@ -182,4 +254,5 @@ def _make_grid(array, range, resolution):
 
 
 def make_grid(mov, resolution):
+    """Make and return grid of occupancies from movement data."""
     return _make_grid(mov.data, mov.site.range, resolution)

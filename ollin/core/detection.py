@@ -8,11 +8,12 @@ through the :py:class:`Detection` class.
 Occupancy and other state variables can then be estimated with such detection
 data.
 """
+from six.moves import xrange
 import numpy as np
 from scipy.spatial import Voronoi, voronoi_plot_2d
 
-from constants import GLOBAL_CONSTANTS
-from ollin.estimation import make_estimate
+from .constants import GLOBAL_CONSTANTS
+from ..estimation.estimation import get_estimation_model
 
 
 class CameraConfiguration(object):
@@ -27,7 +28,7 @@ class CameraConfiguration(object):
         Array of shape [num_cams, 2] holding a vector of camera direction
         for each camera.
     cone_angle : float
-        Viewing angle of cameras in radians.
+        Viewing angle of cameras in degrees.
     cone_range : float
         Distance to camera at which detection is posible.
     range : array
@@ -61,7 +62,7 @@ class CameraConfiguration(object):
             it will be extracted from global constants (see
             :py:const:`ollin.core.constants.GLOBAL_CONSTANTS`).
         cone_angle : float, optional
-            Viewing angle of camera in radians. Default behaviour is as with
+            Viewing angle of camera in degrees. Default behaviour is as with
             cone_range.
 
         """
@@ -166,11 +167,15 @@ class CameraConfiguration(object):
                 'cameras',
                 'camera_voronoi']
 
-        self.site.plot(ax=ax, include=include, **kwargs)
+        ax = self.site.plot(ax=ax, include=include, **kwargs)
 
         if 'camera_voronoi' in include:
+            xlim = ax.get_xlim()
+            ylim = ax.get_ylim()
             vor = Voronoi(self.positions)
             voronoi_plot_2d(vor, show_vertices=False, ax=ax)
+            ax.set_xlim(*xlim)
+            ax.set_ylim(*ylim)
 
         if 'cameras' in include:
             if cone_length is None:
@@ -425,7 +430,11 @@ class Detection(object):
         self.detections = detections
         self.detection_nums = self.detections.sum(axis=0)
 
-    def estimate_occupancy(self, type='stan'):
+    def estimate_occupancy(
+            self,
+            model='single_species',
+            method='MAP',
+            priors=None):
         """Estimate occupancy and detectability from detection data.
 
         Use one of the estimation methods to estimate occupancy and
@@ -442,7 +451,9 @@ class Detection(object):
                 Estimate object containing estimation information.
 
         """
-        return make_estimate(self.detections, type=type)
+        model = get_estimation_model('occupancy', model)
+        estimate = model.estimate(self, method=method, priors=priors)
+        return estimate
 
     def plot(
             self,
@@ -512,7 +523,7 @@ class Detection(object):
                 'detection',
                 'detection_colorbar']
 
-        self.camera_configuration.plot(ax=ax, include=include, **kwargs)
+        ax = self.camera_configuration.plot(ax=ax, include=include, **kwargs)
 
         if 'detection' in include:
             vor = Voronoi(self.camera_configuration.positions)
@@ -585,7 +596,7 @@ class MovementDetection(Detection):
 
         """
         msg = "Camera range and movement range do not coincide"
-        assert (cam.range == mov.range).all(), msg
+        assert (cam.range == mov.site.range).all(), msg
 
         self.movement = mov
         self.grid = make_detection_data(mov, cam)
@@ -649,8 +660,8 @@ class MovementDetection(Detection):
                 'detection',
                 'detection_colorbar']
 
-        self.movement.plot(ax=ax, include=include, **kwargs)
-        super(MovementDetection, self).plot(
+        ax = self.movement.plot(ax=ax, include=include, **kwargs)
+        ax = super(MovementDetection, self).plot(
             ax=ax, include=include, **kwargs)
         return ax
 
@@ -691,7 +702,7 @@ def make_detection_data(movement, camera_config):
     movement_data = movement.data
     num, steps, _ = movement_data.shape
     cone_range = camera_config.cone_range
-    cone_angle = camera_config.cone_angle
+    cone_angle = np.pi * camera_config.cone_angle / 360.0
 
     relative_pos = (movement_data[:, :, None, :] -
                     camera_position[None, None, :, :])
@@ -700,7 +711,7 @@ def make_detection_data(movement, camera_config):
     closeness = np.less(norm, cone_range)
 
     angles = np.abs(np.angle(relative_pos / camera_direction, deg=1))
-    is_in_angle = np.less(angles, cone_angle / 2.0, where=closeness)
+    is_in_angle = np.less(angles, cone_angle, where=closeness)
 
     detected = closeness * is_in_angle
     return detected

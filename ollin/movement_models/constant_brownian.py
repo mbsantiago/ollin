@@ -1,3 +1,4 @@
+from six.moves import xrange
 import numpy as np
 from numba import jit, float64, int64
 

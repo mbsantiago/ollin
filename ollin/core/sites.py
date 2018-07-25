@@ -10,30 +10,59 @@ that provides a measure of "adequacy" of position for the species. The function
 values should be in the [0, 1] range, taking a value of 1 to mean the highest
 level of adequacy. The function is stored as an array representing the
 rectangular region at some spatial resolution. The niche information can then
-be exploited by to guide individuals in their movements.
+be exploited to guide individuals in their movements.
 
 Sites can be created randomly by placing a random number of cluster points
-in range and making a gaussian kernel density estimation, or by specifying
+in range and making a Gaussian kernel density estimation, or by specifying
 points at which niche values are known to be high and extrapolating by some
 kernel density estimation. This data could possibly arise from ecological and
-climatic variables, real telemetric data, or presence/absence data from camera
+climatic variables, real telemetry data, or presence/absence data from camera
 traps studies.
 """
 from __future__ import division
 
 from abc import abstractmethod
 import numpy as np
+from six.moves import xrange
 from scipy.stats import gaussian_kde
 
-from constants import GLOBAL_CONSTANTS
+from .constants import GLOBAL_CONSTANTS
 
 
 class BaseSite(object):
+    """Base class for all types of site.
+
+    Attributes
+    ----------
+    range : array
+        Array of shape [2], specifying the dimensions of site (in Km).
+    niche : array
+        Matrix representing the values of adequacy at different points in site.
+    niche_size : float
+        Proportion of total area adequate for species. This are points at which
+        niche value is above some threshold.
+    resolution : float
+        Spatial resolution (in Km) of niche array. If ``range = (x, y)`` and
+        ``niche.shape = [n, m]`` then ``resolution = (x/n + y/m)/2``.
+
+    """
+
     def __init__(
             self,
             range,
             niche):
+        """Construct BaseSite object.
 
+        Arguments
+        ---------
+        range : int or float or tuple or list or array
+            Dimensions of site in Km. If int or float, it will be assumed that
+            site is a square.
+        niche : array
+            Matrix representing the values of adequacy at different points in
+            site.
+
+        """
         if isinstance(range, (int, float)):
             range = np.array([range, range])
         elif isinstance(range, (tuple, list)):
@@ -48,17 +77,20 @@ class BaseSite(object):
 
     @staticmethod
     def get_true_niche(niche):
+        """Select cells with good level of niche adequacy."""
         threshold = niche.mean() / 4
         true_niche = niche >= threshold
         return true_niche
 
     @staticmethod
     def get_niche_size(niche):
+        """Calculate proportion of area of adequate space."""
         true_niche = BaseSite.get_true_niche(niche)
         return true_niche.mean()
 
     @staticmethod
     def get_niche_resolution(niche, range):
+        """Get spatial resolution used in niche array."""
         x, y = range
         n, m = niche.shape
         xres = x / n
@@ -67,14 +99,56 @@ class BaseSite(object):
 
     def plot(
             self,
-            include=None,
-            figsize=(10, 10),
             ax=None,
+            figsize=(10, 10),
+            include=None,
             niche_cmap='Reds',
             niche_alpha=1.0,
-            boundary_color='black',
-            **kwargs):
-        import matplotlib.pyplot as plt  # pylint: disable=import-error
+            boundary_color='black'):
+        """Plot BaseSite information.
+
+        Site plotting adds the following optional components to the
+        plot:
+
+        1. "rectangle":
+            If present in include list, axes will be fitted to Site's range and
+            no ticks will be placed.
+
+        2. "niche":
+            If present in include list, a heatmap plot of niche's adequacy
+            values will be placed within range. A colormap will be used to
+            translate adequacy values to colors.
+
+        2. "niche_boundary":
+            If present in include list, the boundary defining the true niche
+            will be plotted. The true niche is defined as those cells where
+            adequacy value is higher than some threshold, see
+            :py:meth:`BaseSite.get_true_niche`.
+
+        Arguments
+        ---------
+        ax : :py:obj:`matplotlib.axes.Axes`, optional
+            Axes object in which to plot site information.
+        figsize : list or tuple, optional
+            Size of figure to create if no axes object was given. Defaults to
+            (10, 10).
+        include : list or tuple, optional
+            List of components to add to the plot.
+        niche_cmap : str, optional
+            Colormap to use to codify niche adequacy level to color. Defaults
+            to 'Reds'.
+        niche_alpha: float, optional
+            Alpha value of niche cell colors.
+        boundary_color: str, optional
+            Color of boundary of true niche.
+
+        Returns
+        -------
+        ax : :py:obj:`matplotlib.axes.Axes`
+            Return axes for further plotting.
+
+        """
+        import matplotlib.pyplot as plt
 
         if include is None:
             include = ['rectangle', 'niche_boundary', 'niche']
@@ -116,19 +190,82 @@ class BaseSite(object):
 
     @abstractmethod
     def sample(self, num):
+        """Sample n random points from site."""
         pass
 
 
 class Site(BaseSite):
-    def __init__(self, range, points, resolution, kde_bandwidth):
+    """Site with niche from gaussian kernel density estimation.
+
+    A simple way of obtaining an estimate of niche adequacy value, or for
+    random niche creation, is to select points in space which are
+    known to be adequate for the target species. Interpolation to unknown
+    points in space can be accomplished with a gaussian kernel density
+    estimation. Selecting different bandwidths for the kernel density
+    estimation will result in tighter or more diffuse niche values.
+
+    Attributes
+    ----------
+    points : array
+        Array of shape [num_points, 2] containing the coordinates of the points
+        used for the kernel density estimation.
+    kde_bandwidth : float
+        Bandwidth used in the gaussian kernel density estimation.
+    kde : :py:obj:`scipy.stats.gaussian_kde`
+        Density estimation object.
+    range : array
+        Array of shape [2], specifying the dimensions of site (in Km).
+    niche : array
+        Matrix representing the values of adequacy at different points in site.
+    niche_size : float
+        Proportion of total area adequate for species. This are points at which
+        niche value is above some threshold.
+    resolution : float
+        Spatial resolution used for niche array construction, in Km.
+
+    """
+
+    def __init__(
+            self,
+            range,
+            points,
+            resolution,
+            kde_bandwidth,
+            max_niche_value=1):
+        """Construct site object.
+
+        Arguments
+        ---------
+        range : int or float or tuple or list or array
+            Dimensions of site in Km. If int or float, it will be assumed that
+            site is a square.
+        points : array
+            Array of shape [num_points, 2] with coordinates of points to use
+            for the kernel density estimation.
+        resolution : float
+            Spatial resolution used for niche array construction, in Km.
+        kde_bandwidth : float
+            Bandwidth to use in kernel density estimation.
+        resolution : float
+            Spatial resolution used for niche array construction, in Km.
+        kde_bandwidth : float
+            Bandwidth to use in kernel density estimation.
+        max_niche_value : float, optional
+            After niche construction, niche array will be scaled so that its
+            maximum value is this.
+
+        """
         self.points = points
         self.kde_bandwidth = kde_bandwidth
 
         niche, kde = self.make_niche(points, range, kde_bandwidth, resolution)
         self.kde = kde
+
+        niche = max_niche_value * niche / niche.max()
         super(Site, self).__init__(range, niche)
 
     def sample(self, num):
+        """Use kernel density estimation to sample random points form site."""
         points = self.kde.resample(num).T
         points = np.maximum(
             np.minimum(points, self.range),
@@ -137,12 +274,14 @@ class Site(BaseSite):
 
     @staticmethod
     def make_niche(points, range, kde_bandwidth, resolution=1.0):
+        """Make niche array from points."""
         kde = gaussian_kde(points.T, kde_bandwidth)
         niche = Site.make_niche_from_kde(kde, range, resolution=resolution)
         return niche, kde
 
     @staticmethod
     def make_niche_from_kde(kde, range, resolution=1.0):
+        """Make niche array from kernel density estimation."""
         num_sides_x = int(np.ceil(range[0] / float(resolution)))
         num_sides_y = int(np.ceil(range[1] / float(resolution)))
 
@@ -162,7 +301,45 @@ class Site(BaseSite):
             ax=None,
             figsize=(10, 10),
             include=None,
+            points_color='red',
             **kwargs):
+        """Plot Site information.
+
+        Site plotting adds the following optional components to the
+        plot:
+
+        1. "points":
+            If present in include list, points used for kernel density
+            estimation will be show in plot.
+
+        All other components in include list will be passed to BaseSite
+        plotting method. See :py:meth:`BaseSite.plot` to see all components
+        defined at that level.
+
+        Arguments
+        ---------
+        ax : :py:obj:`matplotlib.axes.Axes`, optional
+            Axes object in which to plot site information.
+        figsize : list or tuple, optional
+            Size of figure to create if no axes object was given. Defaults to
+            (10, 10).
+        include : list or tuple, optional
+            List of components to add to the plot. Components list will be
+            passed to the BaseSite plotting method to add the corresponding
+            components.
+        points_color : str, optional
+            Color of points used for kernel density estimation. Defaults to
+            'red'.
+        **kwargs : dict, optional
+            All other keyworded arguments will be passed to BaseSite plotting
+            method.
+
+        Returns
+        -------
+        ax : :py:obj:`matplotlib.axes.Axes`
+            Return axes for further plotting.
+
+        """
         import matplotlib.pyplot as plt
 
         if include is None:
@@ -190,8 +367,54 @@ class Site(BaseSite):
             min_clusters=None,
             max_clusters=None,
             min_cluster_points=None,
-            max_cluster_points=None):
+            max_cluster_points=None,
+            max_niche_value=1):
+        """Make random site.
 
+        Process for random site creation follows the next steps:
+
+        1. Select a random number of clusters. The number is selected within
+           the [min_clusters, max_clusters] range.
+        2. For each cluster select a central point randomly, using a uniform
+           distribution, within site's range.
+        3. For each cluster, select a random number of cluster points, within
+           the range [min_cluster_points, max_cluster_points], around the
+           cluster center, using a gaussian distribution with random covariance
+           matrix.
+        4. Collect all generated points for use in kernel density estimation.
+        5. Select kernel density estimation bandwidth so that niche
+           size (see :py:meth:`BaseSite.get_niche_size`) is recovered.
+
+        Arguments
+        ---------
+        niche_size : float
+            Number in [0, 1] range representing the desired proportion of
+            adequate niche space to total area.
+        resolution : float, optional
+            Spatial resolution to use for niche creation. If none is given it
+            will be taken from the global constants. See
+            :py:const:`ollin.core.constants.GLOBAL_CONSTANTS`.
+        range : int or float or list or tuple or array, optional
+            Size of created site. If int or float it will be assumed that site
+            is square. If none is given it will be taken from the global
+            constants.
+        min_clusters : int, optional
+            Minimum number of clusters used in random niche creation. If none
+            is given it will be taken from the global constants.
+        max_clusters : int, optional
+            Maximum number of clusters used in random niche creation. If none
+            is given it will be taken from the global constants.
+        min_cluster_points : int, optional
+            Minimum number points per cluster used in random niche creation. If
+            none is given it will be taken from the global constants.
+        max_cluster_points : int, optional
+            Maximum number points per cluster used in random niche creation. If
+            none is given it will be taken from the global constants.
+        max_niche_value : float, optional
+            Number in [0, 1] range. Final niche value will have this number as
+            a maximum value.
+
+        """
         if resolution is None:
             resolution = GLOBAL_CONSTANTS['resolution']
         if range is None:
@@ -217,7 +440,13 @@ class Site(BaseSite):
             max_cluster_points)
 
         bandwidth = _select_bandwidth(range, points, niche_size, resolution)
-        return cls(range, points, resolution, bandwidth)
+        site = cls(
+            range,
+            points,
+            resolution,
+            bandwidth,
+            max_niche_value=max_niche_value)
+        return site
 
 
 def _make_random_points(range, min_clusters, max_clusters, min_cluster_points,

@@ -3,7 +3,7 @@ from multiprocessing import Pool
 
 import sys
 import numpy as np
-import ollin as pc
+import ollin
 
 
 RANGE = 20
@@ -161,12 +161,12 @@ class Info(object):
 
 
 def get_single_velocity_info(info):
-    site = pc.Site.make_random(info.niche_size, range=info.range)
-    mov = pc.Movement.simulate(
+    site = ollin.Site.make_random(info.niche_size, range=info.range)
+    mov = ollin.Movement.simulate(
         site,
         num=info.num,
         velocity=info.velocity,
         days=info.movement_model.parameters['hr_days'],
         movement_model=info.movement_model)
-    analyzer = pc.MovementAnalyzer(mov)
+    analyzer = ollin.MovementAnalyzer(mov)
     return analyzer.velocities.mean(axis=1)

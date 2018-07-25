@@ -1,9 +1,9 @@
+from six.moves import xrange
 import numpy as np
 import math
 from numba import jit, float64, int64
 
 from .basemodel import MovementModel
-from ollin.core.utils import normalize
 
 
 class Model(MovementModel):

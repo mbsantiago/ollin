@@ -3,7 +3,7 @@ from multiprocessing import Pool
 
 import sys
 import numpy as np
-import ollin as pc
+import ollin
 
 from ..core.utils import velocity_to_home_range
 
@@ -162,13 +162,14 @@ class Info(object):
         self.num = num
         self.range = range_
 
+
 def get_single_hr_info(info):
-    site = pc.Site.make_random(info.niche_size, range=info.range)
-    mov = pc.Movement.simulate(
+    site = ollin.Site.make_random(info.niche_size, range=info.range)
+    mov = ollin.Movement.simulate(
         site,
         num=info.num,
         velocity=info.velocity,
         days=info.movement_model.parameters['hr_days'],
         movement_model=info.movement_model)
-    hr = pc.HomeRange(mov)
+    hr = ollin.HomeRange(mov)
     return hr.home_ranges

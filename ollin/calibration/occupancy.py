@@ -4,7 +4,7 @@ from multiprocessing import Pool
 
 import sys
 import numpy as np
-import ollin as pc
+import ollin
 
 from ..core.utils import density_to_occupancy, logit
 from ..core.constants import GLOBAL_CONSTANTS
@@ -320,8 +320,8 @@ class Info(object):
 
 
 def get_single_oc_info(info):
-    site = pc.Site.make_random(info.niche_size, range=info.range)
-    mov = pc.Movement.simulate(
+    site = ollin.Site.make_random(info.niche_size, range=info.range)
+    mov = ollin.Movement.simulate(
         site,
         num=info.max_individuals,
         home_range=info.home_range,
@@ -334,7 +334,7 @@ def get_single_oc_info(info):
     for n, num in enumerate(info.nums):
         for k in xrange(info.trials):
             submov = mov.sample(num)
-            oc = pc.Occupancy(submov)
+            oc = ollin.Occupancy(submov)
             results[n, k] = oc.get_occupancy()
 
     return results
