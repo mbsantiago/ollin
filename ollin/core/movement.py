@@ -1,17 +1,16 @@
 """Module defining Movement Data class and Movement Analyzer
 
-Either simulated data or data incoming for real telemetry data can be stored in
-a :py:class:`MovementData` object. The main information stored in such an
-object is the whole history of individual positions, arranged in an array of
+Either simulated data or data incoming from real telemetry data can be stored
+in a :py:class:`MovementData` object. The main information held in such an
+object is the full history of individual positions arranged in an array of
 shape [num_individuals, time_steps, 2]. This information can then be
 plotted for trajectory visualization, or used in further processing.
 
-A specialized type of Movement data is data produced by some movement model
-simulation. Information of movement data and movement model information can
-be packed into a :py:class:`Movement` object.
+Data produced by simulation can be stored in a specialized type of MovementData
+which also holds movement model information. See :py:class:`Movement`.
 
 Movement analysis, such as distribution of velocities, heading angles and
-turning angles can be extracted and stored in an :py:class:`MovementAnalyzer`
+turning angles can be extracted and stored in an :py:class:`MovementAnalysis`
 object.
 """
 from __future__ import division
@@ -154,8 +153,8 @@ class MovementData(object):
 
         """
         selection = np.random.choice(
-                np.arange(self.num),
-                size=num)
+            np.arange(self.num),
+            size=num)
         data = self.data[selection, :, :]
         newcopy = copy.copy(self)
         newcopy.data = data
@@ -291,16 +290,16 @@ class MovementData(object):
         import matplotlib.pyplot as plt  # pylint: disable=import-error
         if include is None:
             include = [
-                    'niche',
-                    'niche_boundary',
-                    'rectangle',
-                    'trajectories']
+                'niche',
+                'niche_boundary',
+                'rectangle',
+                'trajectories']
 
-            if ax is None:
-                fig, ax = plt.subplots(figsize=figsize)
+        if ax is None:
+            _, ax = plt.subplots(figsize=figsize)
 
         self.site.plot(
-                include=include, ax=ax, **kwargs)
+            include=include, ax=ax, **kwargs)
 
         if 'trajectories' in include:
             cmap = plt.get_cmap(mov_cmap)
@@ -320,6 +319,10 @@ class MovementData(object):
                 ax.plot(xcoord, ycoord)
 
         return ax
+
+    def analyze(self):
+        """Analyze movement and return analysis."""
+        return MovementAnalysis(self)
 
 
 class Movement(MovementData):
@@ -347,6 +350,7 @@ class Movement(MovementData):
         Mean velocity (in Km/Day) used to movement simulation.
 
     """
+
     def __init__(
             self,
             site,
@@ -373,11 +377,10 @@ class Movement(MovementData):
             :py:class:`ollin.Occupancy`.
 
         """
-
         self.movement_model = movement_model
         self.velocity = velocity
 
-        num, steps, _ = movement_data.shape
+        steps = movement_data.shape[1]
         steps_per_day = movement_model.parameters['steps_per_day']
         days = steps / steps_per_day
         times = np.linspace(0, days, steps)
@@ -447,6 +450,12 @@ class Movement(MovementData):
         mov : :py:obj:`Movement`
             Movement instance with simulated movement data.
 
+        Raises
+        ------
+        ValueError
+            If both num and occupancy, or velocity and home_range, are given
+            simultaneously.
+
         """
         if not isinstance(movement_model, MovementModel):
             movement_model = get_movement_model(
@@ -471,11 +480,12 @@ class Movement(MovementData):
                 msg = 'If num is not specified home range AND occupancy'
                 msg += ' must be provided'
                 raise ValueError(msg)
+            area = site.range[0] * site.range[1]
+            home_range_proportion = home_range / area
             dens = occupancy_to_density(
                 occupancy,
-                home_range,
+                home_range_proportion,
                 site.niche_size,
-                site.range,
                 parameters=parameters['density'])
             num = int(rangex * rangey * dens)
 
@@ -541,7 +551,7 @@ class Movement(MovementData):
             steps + 1,
             velocity)
         data = np.append(
-                self.data, new_data[:, 1:, :], 1)
+            self.data, new_data[:, 1:, :], 1)
 
         old_steps = self.data.shape[1]
         total_days = (old_steps + steps) / steps_per_day
@@ -611,7 +621,7 @@ class MovementAnalysis(object):
         """
 
         self.movement = mov
-        self.velocities, self.bearings, self.turn_angles = self.analyze()
+        self.velocities, self.bearings, self.turn_angles = self.analyze(mov)
 
     def get_mean_velocity(self):
         """Calculate and return mean velocity"""
@@ -620,7 +630,7 @@ class MovementAnalysis(object):
     @staticmethod
     def analyze(movement):
         """Calculate and return velocities, bearings and turn angles"""
-        num, steps, _ = movement.data.shape
+        steps = movement.data.shape[1]
         data = movement.data.reshape([-1, steps, 2])
         times = movement.times
 
@@ -633,43 +643,226 @@ class MovementAnalysis(object):
                                complex_directions[:, :-1])
         return velocities, bearings, turn_angles
 
-    def plot_velocities(
+    def plot_velocity_distribution(
             self,
             ax=None,
             figsize=(10, 10),
             num_individual=0,
-            bins=20):
-        """Plot velocities distribution.
+            bins=20,
+            width=None,
+            cmap='Reds',
+            alpha=0.8,
+            log=True):
+        """Plot distribution of velocities.
 
         Arguments
         ---------
         ax : :py:obj:`matplotlib.axes.Axes`, optional
-            Axes in which to plot histogram.
-        figsize : list or tuple, optional
-            Figure size for new plot, if no axes is given. Defaults to (10,
-            10).
-        num_individual : int or str, optional
-            If int, only velocity information for the corresponding individual
-            will be plotted. If num_individual='all' then all velocity info
-            will be plotted. Defaults to 0.
+            Axes object in which to plot.
+        figsize : tuple or list, optional
+            Size of figure to create if no axes are provided.
+        num_individual : int or tuple or list or array, optional
+            Selection of individuals from which to draw velocity
+            information. If num_individual='all', all information will
+            be plotted.
         bins : int, optional
-            Number of bins to use in histogram. Defaults to 20.
-
-        Returns
-        -------
-        ax : :py:obj:`matplotlib.axes.Axes`
-            Axes object for further plotting.
-
+            Number of bins to use in histogram of velocity distribution.
+            Defaults to 20.
+        width : float, optional
+            Width of bars in histogram. If none is given, width will be
+            maximum possible before overlap.
+        cmap : str, optional
+            Colormap to use to assign colors to histogram bars. Defaults
+            to 'Reds'.
+        alpha : float, optional
+            Alpha value of plot. Defaults to 0.8.
+        log : bool, optional
+            If true, yaxis in histogram will have logarithmic scale.
         """
-
         import matplotlib.pyplot as plt
+        from matplotlib.cm import get_cmap
+
         if ax is None:
-            fig, ax = plt.subplots()
+            _, ax = plt.subplots(figsize=figsize)
 
         if num_individual == 'all':
-            velocities = self.velocities.ravel()
+            vdata = self.velocities.ravel()
+        elif isinstance(num_individual, int):
+            vdata = self.velocities[num_individual, :]
         else:
-            velocities = self.velocities[num_individual]
+            vdata = self.velocities[num_individual, :].ravel()
 
-        plt.hist(velocities, bins=bins)
+        range_ = (0, vdata.max())
+        histogram, _ = np.histogram(
+            vdata, bins=bins, range=range_, normed=not log)
+        if log:
+            histogram = np.log(histogram + 1)
+
+        if width is None:
+            width = (range_[1] - range_[0]) / bins
+        theta = np.linspace(range_[0], range_[1], bins, endpoint=False)
+
+        bars = ax.bar(theta, histogram, width=width, bottom=0)
+        mins, maxs = histogram.min(), histogram.max()
+
+        # Use custom colors and opacity
+        cmap = get_cmap(cmap)
+        for value, pbar in zip(histogram, bars):
+            pbar.set_facecolor(
+                cmap((value - mins + 0.1) / (0.1 + maxs - mins)))
+            pbar.set_alpha(alpha)
+        ticks = np.linspace(0, histogram.max(), 10)
+        ax.set_yticks(ticks)
+        ax.set_yticklabels(np.round(ticks, 2))
+
+        ax.set_title('Velocity distribution')
+        ax.set_xlabel('Velocity (Km/Day)')
+
+        if log:
+            ax.set_ylabel('Log count')
+        else:
+            ax.set_ylabel('Proportion')
+
+        return ax
+
+    def plot_bearing_distribution(
+            self,
+            ax=None,
+            figsize=(10, 10),
+            num_individual=0,
+            bins=20,
+            width=None,
+            cmap='Reds',
+            alpha=0.8):
+        """Plot distribution of bearing angles.
+
+        Arguments
+        ---------
+        ax : :py:obj:`matplotlib.axes.Axes`, optional
+            Axes object in which to plot.
+        figsize : tuple or list, optional
+            Size of figure to create if no axes are provided.
+        num_individual : int or tuple or list or array, optional
+            Selection of individuals from which to draw bearing angle
+            information. If num_individual='all', all information will
+            be plotted.
+        bins : int, optional
+            Number of bins to use in histogram of bearing distribution.
+            Defaults to 20.
+        width : float, optional
+            Width of bars in histogram. If none is given, width will be
+            maximum possible before overlap.
+        cmap : str, optional
+            Colormap to use to assign colors to histogram bars. Defaults
+            to 'Reds'.
+        alpha : float, optional
+            Alpha value of plot. Defaults to 0.8.
+        """
+        import matplotlib.pyplot as plt
+        from matplotlib.cm import get_cmap
+
+        if ax is None:
+            _, ax = plt.subplots(
+                figsize=figsize, subplot_kw={"polar": True})
+
+        if num_individual == 'all':
+            bdata = self.bearings.ravel()
+        elif isinstance(num_individual, int):
+            bdata = self.bearings[num_individual, :]
+        else:
+            bdata = self.bearings[num_individual, :].ravel()
+
+        range_ = (-np.pi, np.pi)
+        histogram, _ = np.histogram(
+            bdata, bins=bins, range=range_, normed=True)
+
+        if width is None:
+            width = (range_[1] - range_[0]) / bins
+        theta = np.linspace(range_[0], range_[1], bins, endpoint=False)
+
+        bars = ax.bar(theta, histogram, width=width, bottom=0.05)
+        mins, maxs = histogram.min(), histogram.max()
+
+        # Use custom colors and opacity
+        cmap = get_cmap(cmap)
+        for value, pbar in zip(histogram, bars):
+            pbar.set_facecolor(
+                cmap((value - mins + 0.1) / (0.1 + maxs - mins)))
+            pbar.set_alpha(alpha)
+        ticks = np.linspace(0.05, 0.05 + histogram.max(), 4)
+        ax.set_yticks(ticks)
+        ax.set_yticklabels(np.round(ticks - 0.05, 2))
+
+        ax.set_title('Bearing distribution')
+        return ax
+
+    def plot_turn_angle_distribution(
+            self,
+            ax=None,
+            figsize=(10, 10),
+            num_individual=0,
+            bins=20,
+            width=None,
+            cmap='Reds',
+            alpha=0.8):
+        """Plot distribution of turning angles.
+
+        Arguments
+        ---------
+        ax : :py:obj:`matplotlib.axes.Axes`, optional
+            Axes object in which to plot.
+        figsize : tuple or list, optional
+            Size of figure to create if no axes are provided.
+        num_individual : int or tuple or list or array, optional
+            Selection of individuals from which to draw turning angle
+            information. If num_individual='all', all information will
+            be plotted.
+        bins : int, optional
+            Number of bins to use in histogram of turn angle distribution.
+            Defaults to 20.
+        width : float, optional
+            Width of bars in histogram. If none is given, width will be
+            maximum possible before overlap.
+        cmap : str, optional
+            Colormap to use to assign colors to histogram bars. Defaults
+            to 'Reds'.
+        alpha : float, optional
+            Alpha value of plot. Defaults to 0.8.
+        """
+        import matplotlib.pyplot as plt
+        from matplotlib.cm import get_cmap
+
+        if ax is None:
+            _, ax = plt.subplots(
+                figsize=figsize, subplot_kw={"polar": True})
+
+        if num_individual == 'all':
+            tdata = self.turn_angles.ravel()
+        elif isinstance(num_individual, int):
+            tdata = self.turn_angles[num_individual, :]
+        else:
+            tdata = self.turn_angles[num_individual, :].ravel()
+
+        range_ = (-np.pi, np.pi)
+        histogram, _ = np.histogram(
+            tdata, bins=bins, range=range_, normed=True)
+
+        if width is None:
+            width = (range_[1] - range_[0]) / bins
+        theta = np.linspace(range_[0], range_[1], bins, endpoint=False)
+
+        bars = ax.bar(theta, histogram, width=width, bottom=0.05)
+        mins, maxs = histogram.min(), histogram.max()
+
+        # Use custom colors and opacity
+        cmap = get_cmap(cmap)
+        for value, pbar in zip(histogram, bars):
+            pbar.set_facecolor(
+                cmap((value - mins + 0.1) / (0.1 + maxs - mins)))
+            pbar.set_alpha(alpha)
+        ticks = np.linspace(0.05, 0.05 + histogram.max(), 4)
+        ax.set_yticks(ticks)
+        ax.set_yticklabels(np.round(ticks - 0.05, 2))
+
+        ax.set_title('Turn Angle distribution')
         return ax
