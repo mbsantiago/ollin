@@ -76,9 +76,8 @@ class BaseSite(object):
         self.resolution = self.get_niche_resolution(niche, range)
 
     @staticmethod
-    def get_true_niche(niche):
+    def get_true_niche(niche, threshold=0.25):
         """Select cells with good level of niche adequacy."""
-        threshold = niche.mean() / 4
         true_niche = niche >= threshold
         return true_niche
 
@@ -104,7 +103,8 @@ class BaseSite(object):
             include=None,
             niche_cmap='Reds',
             niche_alpha=1.0,
-            boundary_color='black'):
+            boundary_color='black',
+            **kwargs):
         """Plot BaseSite information.
 
         Site plotting adds the following optional components to the
@@ -229,8 +229,8 @@ class Site(BaseSite):
             self,
             range,
             points,
-            resolution,
-            kde_bandwidth,
+            resolution=0.1,
+            kde_bandwidth=0.3,
             max_niche_value=1):
         """Construct site object.
 
@@ -443,8 +443,8 @@ class Site(BaseSite):
         site = cls(
             range,
             points,
-            resolution,
-            bandwidth,
+            resolution=resolution,
+            kde_bandwidth=bandwidth,
             max_niche_value=max_niche_value)
         return site
 
@@ -486,6 +486,7 @@ def _select_bandwidth(range, points, niche_size, resolution):
     counter = 0
     while True:
         niche = Site.make_niche_from_kde(kde, range, resolution=resolution)
+        niche = niche / niche.max()
         calculated_niche = Site.get_niche_size(niche)
 
         err = abs(calculated_niche - niche_size)

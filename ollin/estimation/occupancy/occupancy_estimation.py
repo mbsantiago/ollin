@@ -8,6 +8,7 @@ class OccupancyEstimate(Estimate):
     def __init__(self, occupancy, model, data, detectability=None):
         self.occupancy = occupancy
         self.model = model
+        self.data = data
         self.detectability = detectability
 
     def __str__(self):

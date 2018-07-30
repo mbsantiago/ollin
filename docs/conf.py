@@ -24,9 +24,9 @@ copyright = u'2018, CONABIO, Santiago Martínez'
 author = u'CONABIO, Santiago Martínez'
 
 # The short X.Y version
-version = u'1.0'
+version = u'0.0'
 # The full version, including alpha/beta/rc tags
-release = u'1.0.0'
+release = u'0.0.1'
 
 
 # -- General configuration ---------------------------------------------------
@@ -81,7 +81,8 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinxdoc'
+# html_theme = 'classic'
+html_theme = "sphinx_rtd_theme"
 
 html_logo = '_static/ollin.jpg'
 

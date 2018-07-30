@@ -40,6 +40,6 @@ def get_movement_model_list():
         module for module in python_files
         if (module != '__init__') and (module != 'basemodel')]
 
-    print('{} Estimation Models:')
+    print('Movement Model Library:')
     for num, mov in enumerate(movement_models):
         print('\t{}.- {}'.format(num + 1, mov))

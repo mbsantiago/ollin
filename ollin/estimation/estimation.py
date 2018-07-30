@@ -1,3 +1,5 @@
+"""
+"""
 from abc import abstractmethod
 from importlib import import_module
 import os
@@ -7,6 +9,7 @@ try:
     from functools import lru_cache
 except ImportError:
     from backports.functools_lru_cache import lru_cache
+
 
 class Estimate(object):
     def __init__(self, model, data):
@@ -50,6 +53,6 @@ def get_estimation_model_list(what):
                 (module != '__init__') and
                 (module != '{}_estimation'.format(what)))]
 
-    print('Movement Model Library:')
+    print('{} Estimation Model Library:'.format(what.title()))
     for num, mov in enumerate(movement_models):
         print('\t{}.- {}'.format(num + 1, mov))

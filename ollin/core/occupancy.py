@@ -93,8 +93,13 @@ class Occupancy(object):
         Spatial resolution (in Km) for site discretization.
     grid : array
         Array of shape [time_steps, x, y] where [x, y] is the
-        size of the discretized site. Holds cell occupation at
+        size of the discretized site. Holds cell occupancy at
         each time step.
+    cell_occupancy : array
+        Array of shape [x, y] where [x, y] is the size of the
+        discretized site. Holds cell occupancy.
+    occupancy : float
+        Occupancy measure.
     """
 
     def __init__(self, movement, resolution=None):
@@ -117,17 +122,8 @@ class Occupancy(object):
         self.resolution = resolution
 
         self.grid = make_grid(self.movement, self.resolution)
-
-    def get_occupancy_nums(self):
-        """Get number of cell occupation events, per cell."""
-        occupancy_nums = np.sum(self.grid, axis=0)
-        return occupancy_nums
-
-    def get_occupancy(self):
-        """Get occupancy."""
-        occupancy_nums = self.get_occupancy_nums()
-        occupancy = np.mean(occupancy_nums / float(self.steps))
-        return occupancy
+        self.cell_occupancy = self.grid.sum(axis=0) / self.steps
+        self.occupancy = self.cell_occupancy.mean()
 
     def plot(
             self,
@@ -197,8 +193,7 @@ class Occupancy(object):
         self.movement.plot(include=include, ax=ax, **kwargs)
 
         if 'occupancy' in include:
-            grid = self.get_occupancy_nums()
-            grid = grid / float(self.steps)
+            grid = self.cell_occupancy
 
             range_ = self.movement.site.range
             h, w = grid.shape
@@ -218,6 +213,27 @@ class Occupancy(object):
             if 'occupancy_contour' in include:
                 mask = (grid >= occupancy_level)
                 ax.contour(xcoord, ycoord, mask.T, levels=[0.5], cmap='Blues')
+
+        return ax
+
+    def plot_occupancy_timeseries(
+            self,
+            ax=None,
+            figsize=(10, 10),
+            color='red',
+            label=''):
+        import matplotlib.pyplot as plt
+
+        if ax is None:
+            _, ax = plt.subplots(figsize=figsize)
+
+        times = self.movement.times
+        occupancies = [self.grid[:n].mean() for n in xrange(2, times.size)]
+
+        ax.plot(times[2:], occupancies, color=color, label=label)
+        ax.set_xlabel('Time (Days)')
+        ax.set_ylabel('Occupancy')
+        ax.set_ylim(0, 1)
 
         return ax
 

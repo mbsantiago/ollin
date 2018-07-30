@@ -335,6 +335,6 @@ def get_single_oc_info(info):
         for k in xrange(info.trials):
             submov = mov.sample(num)
             oc = ollin.Occupancy(submov)
-            results[n, k] = oc.get_occupancy()
+            results[n, k] = oc.occupancy
 
     return results

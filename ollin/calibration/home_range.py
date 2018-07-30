@@ -69,7 +69,7 @@ class HomeRangeCalibrator(object):
 
         return all_info
 
-    def plot(self, cmap='Set2', figsize=(10, 10), ax=None):
+    def plot(self, cmap='Set2', figsize=(10, 10), ax=None, plotfit=True):
         import matplotlib.pyplot as plt
         from matplotlib.cm import get_cmap
         if ax is None:
@@ -94,14 +94,16 @@ class HomeRangeCalibrator(object):
                 color=color,
                 alpha=0.6,
                 edgecolor='white')
-        target_hr = velocity_to_home_range(
-            np.array(self.velocities),
-            parameters=self.movement_model.parameters['home_range'])
-        ax.plot(
-            self.velocities,
-            target_hr,
-            color='red',
-            label='target')
+
+        if plotfit:
+            target_hr = velocity_to_home_range(
+                np.array(self.velocities),
+                parameters=self.movement_model.parameters['home_range'])
+            ax.plot(
+                self.velocities,
+                target_hr,
+                color='red',
+                label='target')
 
         ax.set_yticks(np.linspace(0, max_hrange, 20))
         ax.set_xticks(self.velocities)

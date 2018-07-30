@@ -96,7 +96,7 @@ class CameraConfiguration(object):
             Camera detection information.
 
         """
-        data = MovementDetection(self, mov)
+        data = MovementDetection(mov, self)
         return data
 
     def plot(
@@ -106,6 +106,7 @@ class CameraConfiguration(object):
             include=None,
             cone_length=0.4,
             camera_alpha=0.3,
+            camera_color=None,
             **kwargs):
         """Draw camera positions and orientations.
 
@@ -144,6 +145,8 @@ class CameraConfiguration(object):
             km.
         camera_alpha : float, optional
             Alpha value for camera cones.
+        camera_color : str, optional
+            Color for camera position points.
         kwargs : dict
             Other keyworded arguments will be passed to the CameraConfiguration
             plot method.
@@ -173,7 +176,8 @@ class CameraConfiguration(object):
             xlim = ax.get_xlim()
             ylim = ax.get_ylim()
             vor = Voronoi(self.positions)
-            voronoi_plot_2d(vor, show_vertices=False, ax=ax)
+            voronoi_plot_2d(
+                vor, show_points=False, show_vertices=False, ax=ax)
             ax.set_xlim(*xlim)
             ax.set_ylim(*ylim)
 
@@ -190,6 +194,9 @@ class CameraConfiguration(object):
             collection = PatchCollection(
                 patches, cmap=plt.cm.hsv, alpha=camera_alpha)
             ax.add_collection(collection)
+
+            xcoord, ycoord = self.positions.T
+            ax.scatter(xcoord, ycoord, color=camera_color, s=4)
 
         return ax
 
@@ -251,7 +258,7 @@ class CameraConfiguration(object):
     def make_grid(
             cls,
             distance,
-            range=None,
+            site,
             cone_range=None,
             cone_angle=None):
         """Place grid of cameras in virtual world.
@@ -264,12 +271,8 @@ class CameraConfiguration(object):
         ---------
         distance : float
             Distance between adjacent cameras in grid.
-        range : list or tuple or array, optional
-            Array of shape [2] specifying the dimensions of the virtual world
-            in which to place the cameras. If an int "a" is passed the
-            resulting range will be [a, a]. If not provided
-            it will be extracted from global constants (see
-            :py:const:`ollin.core.constants.GLOBAL_CONSTANTS`).
+        site : :py:obj:`ollin.core.sites.Site`
+            Site in which to place cameras.
         cone_range : float, optional
             Distance to camera at which detection is possible. Default
             behaviour is as with range.
@@ -283,16 +286,7 @@ class CameraConfiguration(object):
             Camera configuration object in square grid configuration.
 
         """
-        if range is None:
-            range = GLOBAL_CONSTANTS['range']
-
-        if isinstance(range, (int, float)):
-            range = np.array([range, range])
-        elif isinstance(range, (tuple, list)):
-            if len(range) == 1:
-                range = [range[0], range[0]]
-            range = np.array(range)
-        range = range.astype(np.float64)
+        range = site.range
 
         num_x = int(range[0] / distance)
         num_y = int(range[1] / distance)
@@ -311,7 +305,7 @@ class CameraConfiguration(object):
         cam = cls(
             positions,
             angles,
-            range=range,
+            site,
             cone_angle=cone_angle,
             cone_range=cone_range)
         return cam
@@ -421,7 +415,7 @@ class Detection(object):
 
         """
         self.camera_configuration = cam
-        self.range = cam.range
+        self.range = cam.site.range
 
         msg = 'Detection array shape implies a different number of cameras'
         msg += ' to number reported from camera configuration'
@@ -514,12 +508,13 @@ class Detection(object):
         from matplotlib.colors import Normalize
 
         if ax is None:
-            fig, ax = plt.subplots(figsize=(10, 10))
+            fig, ax = plt.subplots(figsize=figsize)
 
         if include is None:
             include = [
                 'rectangle',
                 'camera',
+                'camera_voronoi',
                 'detection',
                 'detection_colorbar']
 

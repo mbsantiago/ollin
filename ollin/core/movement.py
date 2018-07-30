@@ -18,7 +18,6 @@ from __future__ import print_function
 import copy
 
 import numpy as np
-from cycler import cycler
 
 from ..movement_models.basemodel import MovementModel
 from .constants import GLOBAL_CONSTANTS
@@ -288,6 +287,8 @@ class MovementData(object):
 
         """
         import matplotlib.pyplot as plt  # pylint: disable=import-error
+        from cycler import cycler
+
         if include is None:
             include = [
                 'niche',
@@ -303,7 +304,7 @@ class MovementData(object):
 
         if 'trajectories' in include:
             cmap = plt.get_cmap(mov_cmap)
-            colors = [cmap(i) for i in np.linspace(0.05, .8, 10)]
+            colors = [cmap(i) for i in np.linspace(.8, .1, 10)]
             ax.set_prop_cycle(cycler('color', colors))
 
             steps = min(self.steps, steps)
@@ -630,8 +631,7 @@ class MovementAnalysis(object):
     @staticmethod
     def analyze(movement):
         """Calculate and return velocities, bearings and turn angles"""
-        steps = movement.data.shape[1]
-        data = movement.data.reshape([-1, steps, 2])
+        data = movement.data
         times = movement.times
 
         dtimes = (times[1:] - times[:-1])[None, :, None]

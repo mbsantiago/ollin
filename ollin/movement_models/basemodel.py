@@ -60,8 +60,10 @@ class MovementModel(object):
 
         return parameters
 
-    def __init__(self, parameters):
+    def __init__(self, parameters=None):
         """Construct a movement model instance with the given parameters"""
+        if parameters is None:
+            parameters = {}
         self.parameters = self.handle_parameters(parameters)
 
     @abstractmethod

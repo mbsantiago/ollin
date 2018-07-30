@@ -5,5 +5,5 @@ API Reference
 .. toctree::
   core/core
   movement_models/movement models
-  estimation/estimation
+  estimation/main
   calibration/calibration

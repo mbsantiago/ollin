@@ -41,6 +41,10 @@ class StanModel(EstimationModel):
         return op
 
     def load_model(self):
+
+        if not os.path.exists(COMPILED_PATH):
+            os.makedirs(COMPILED_PATH)
+
         path = os.path.join(
             COMPILED_PATH, self.name.replace(' ', '_') + '.pkl')
         if os.path.exists(path):
