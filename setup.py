@@ -16,11 +16,11 @@ setuptools.setup(
     url="https://github.com/mbsantiago/ollin",
     packages=setuptools.find_packages(),
     install_requires=[
+        "pystan",
         "six",
         "numpy",
         "numba",
         "scipy",
-        "pystan",
         "backports.functools_lru_cache"],
     classifiers=(
         "Programming Language :: Python :: 3",
