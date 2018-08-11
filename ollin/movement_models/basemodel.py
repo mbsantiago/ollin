@@ -1,13 +1,13 @@
 """Base class for all movement models."""
 
-from abc import abstractmethod
+from abc import abstractmethod, ABCMeta
 from six import iteritems
 
 from ..core.constants import MOVEMENT_PARAMETERS
 
 
 class MovementModel(object):
-    """Base class for all movement models
+    """Base class for all movement models.
 
     Any movement model must subclass this class and implement the generate
     movement method. Also they must provide a global attribute defining the
@@ -22,7 +22,10 @@ class MovementModel(object):
         movement model. There are some required parameters for every
         movement model. If not provided they will default to those in
         :py:const:`ollin.core.constants.MOVEMENT_PARAMETERS`.
+
     """
+
+    __metaclass__ = ABCMeta
     name = None
     default_parameters = {}
 
@@ -61,7 +64,7 @@ class MovementModel(object):
         return parameters
 
     def __init__(self, parameters=None):
-        """Construct a movement model instance with the given parameters"""
+        """Construct a movement model instance with the given parameters."""
         if parameters is None:
             parameters = {}
         self.parameters = self.handle_parameters(parameters)
@@ -96,5 +99,6 @@ class MovementModel(object):
             x and y are the coordinates of the i-th individual at step j in the
             simulation. Number of steps is determined by number of days and
             steps per day parameter.
+
         """
         pass

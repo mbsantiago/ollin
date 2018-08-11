@@ -1,20 +1,17 @@
 Occupancy Estimation
-====================
+--------------------
 
-Estimation Class
-----------------
+Occupancy Estimate Class
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: ollin.estimation.occupancy.occupancy_estimation
   :members:
 
 Model Library
--------------
+^^^^^^^^^^^^^
 
-.. automodule:: ollin.estimation.occupancy.naive
-  :members: Model
+.. autoclass:: ollin.estimation.occupancy.naive.Model
 
-.. automodule:: ollin.estimation.occupancy.single_species
-  :members: Model
+.. autoclass:: ollin.estimation.occupancy.single_species.Model
 
-.. automodule:: ollin.estimation.occupancy.voronoi_areas
-  :members: Model
+.. autoclass:: ollin.estimation.occupancy.voronoi_areas.Model

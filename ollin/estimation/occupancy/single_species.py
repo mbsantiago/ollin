@@ -42,6 +42,11 @@ model {
 
 
 class Model(StanModel):
+    """McKenzie Model for Single Species - Single Season occupancy estimation.
+
+
+    """
+
     name = 'McKenzie Single Species - Single Season'
     stancode = CODE
 

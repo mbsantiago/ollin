@@ -222,6 +222,30 @@ class Occupancy(object):
             figsize=(10, 10),
             color='red',
             label=''):
+        """Plot occupancy values at different times.
+
+        Occupancy is defined as the mean rate of occupation. The rate of
+        occupation is calculated over some timespan. This method calculates
+        occupancy at all possible timespans and plots the resulting timeseries
+        for visual comparison.
+
+        Arguments
+        ---------
+        ax : :py:obj:`matplotlib.axes.Axes`, optional
+            Axes in which to plot timeseries. If not provided new axes will be
+            created.
+        figsize : tuple or list, optional
+            Size of figure to be created if no axes where provided.
+        color : str, optional
+            Name of color to use for plot.
+        label : str, optional
+            Label of plot.
+
+        Returns
+        -------
+        ax : :py:obj:`matplotlib.axes.Axes`, optional
+            Axes of plot, returned for further plotting.
+        """
         import matplotlib.pyplot as plt
 
         if ax is None:
