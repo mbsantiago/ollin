@@ -1,10 +1,14 @@
-from __future__ import print_function
 from multiprocessing import Pool
+import logging
+from functools import partial
 
 import sys
 import numpy as np
 import ollin
+from ollin.core.utils import velocity_modification
 
+
+logger = logging.getLogger(__name__)
 
 RANGE = 20
 TRIALS_PER_WORLD = 100
@@ -21,7 +25,8 @@ class VelocityCalibrator(object):
             niche_sizes=NICHE_SIZES,
             trials_per_world=TRIALS_PER_WORLD,
             num_worlds=NUM_WORLDS,
-            range=RANGE):
+            range=RANGE,
+            **kwargs):
 
         self.movement_model = movement_model
         self.velocities = velocities
@@ -41,15 +46,20 @@ class VelocityCalibrator(object):
         all_info = np.zeros(
             [n_vel, n_nsz, self.num_worlds, self.trials_per_world])
         arguments = [
-            Info(mov, vel, nsz, num, self.range)
+            (vel, nsz, num)
             for vel in self.velocities
             for nsz in self.niche_sizes
             for k in xrange(self.num_worlds)]
 
-        print('Simulating {} scenarios'.format(len(arguments)))
+        logger.info('Simulating {} scenarios'.format(len(arguments)))
         pool = Pool()
         try:
-            results = pool.map(get_single_velocity_info, arguments)
+            results = pool.map(
+                partial(
+                    _get_single_velocity_info,
+                    model=mov,
+                    range=self.range),
+                arguments)
             pool.close()
             pool.join()
         except KeyboardInterrupt:
@@ -68,7 +78,7 @@ class VelocityCalibrator(object):
 
         return all_info
 
-    def plot(self, cmap='Set2', figsize=(10, 10), ax=None):
+    def plot(self, cmap='Set2', figsize=(10, 10), ax=None, plotfit=True):
         import matplotlib.pyplot as plt
         from matplotlib.cm import get_cmap
 
@@ -86,7 +96,7 @@ class VelocityCalibrator(object):
                 self.velocities,
                 mean,
                 c=color,
-                label='Niche Size: {}'.format(nsz))
+                label='Niche Size: {}'.format(round(nsz, 2)))
             ax.fill_between(
                 self.velocities,
                 mean - std,
@@ -95,7 +105,17 @@ class VelocityCalibrator(object):
                 alpha=0.6,
                 edgecolor='white')
 
-        ax.plot(self.velocities, self.velocities, color='red', label='target')
+            if plotfit:
+                vel_mod = velocity_modification(
+                    nsz, self.movement_model.parameters)
+                target_velocities = vel_mod * self.velocities
+
+                ax.plot(
+                    self.velocities,
+                    target_velocities,
+                    c='red',
+                    label='Niche Size: {} (fit)'.format(round(nsz, 2)))
+
         ax.set_title('Velocity Calibration')
 
         ax.set_xlabel('target velocity (Km/day)')
@@ -138,35 +158,14 @@ class VelocityCalibrator(object):
         return fit
 
 
-class Info(object):
-    __slots__ = [
-        'movement_model',
-        'velocity',
-        'niche_size',
-        'num',
-        'range']
-
-    def __init__(
-            self,
-            movement_model,
-            velocity,
-            niche_size,
-            num,
-            range_):
-        self.movement_model = movement_model
-        self.velocity = velocity
-        self.niche_size = niche_size
-        self.num = num
-        self.range = range_
-
-
-def get_single_velocity_info(info):
-    site = ollin.Site.make_random(info.niche_size, range=info.range)
+def _get_single_velocity_info(args, model, range):
+    velocity, niche_size, num_individuals = args
+    site = ollin.Site.make_random(niche_size, range=range)
     mov = ollin.Movement.simulate(
         site,
-        num=info.num,
-        velocity=info.velocity,
-        days=info.movement_model.parameters['hr_days'],
-        movement_model=info.movement_model)
+        num=num_individuals,
+        velocity=velocity,
+        days=model.parameters['hr_days'],
+        movement_model=model)
     analyzer = ollin.MovementAnalysis(mov)
     return analyzer.velocities.mean(axis=1)

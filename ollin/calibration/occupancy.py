@@ -1,13 +1,16 @@
-from __future__ import print_function
 from __future__ import division
 from multiprocessing import Pool
+import logging
+from functools import partial
 
 import sys
 import numpy as np
 import ollin
 
 from ..core.utils import density_to_occupancy, logit
-from ..core.constants import GLOBAL_CONSTANTS
+
+
+logger = logging.getLogger(__name__)
 
 
 TRIALS_PER_WORLD = 100
@@ -16,6 +19,8 @@ NUM_WORLDS = 10
 HOME_RANGES = np.linspace(0.1, 3, 6)
 NICHE_SIZES = np.linspace(0.3, 0.9, 6)
 NUMS = np.linspace(10, 1000, 6, dtype=np.int64)
+RANGE = 20
+SEASON = 90
 
 
 class OccupancyCalibrator(object):
@@ -27,9 +32,10 @@ class OccupancyCalibrator(object):
             nums=NUMS,
             trials_per_world=TRIALS_PER_WORLD,
             num_worlds=NUM_WORLDS,
-            range=GLOBAL_CONSTANTS['range'],
-            season=GLOBAL_CONSTANTS['season'],
-            max_individuals=MAX_INDIVIDUALS):
+            range=RANGE,
+            season=SEASON,
+            max_individuals=MAX_INDIVIDUALS,
+            **kwargs):
 
         self.movement_model = movement_model
         self.home_ranges = home_ranges
@@ -52,25 +58,35 @@ class OccupancyCalibrator(object):
         tpw = self.trials_per_world
         nw = self.num_worlds
         mov = self.movement_model
-        mx_ind = self.max_individuals
-        season = self.season
 
         all_info = np.zeros(
-                [n_hr, n_nsz, n_num, nw, tpw])
+            [n_hr, n_nsz, n_num, nw, tpw])
         arguments = [
-                Info(mov, hr, nsz, self.nums, tpw, self.range, season, mx_ind)
-                for hr in self.home_ranges
-                for nsz in self.niche_sizes
-                for k in xrange(self.num_worlds)]
+            (hr, nsz)
+            for hr in self.home_ranges
+            for nsz in self.niche_sizes
+            for k in xrange(self.num_worlds)]
 
         nargs = len(arguments)
         msg = 'Making {} runs of the simulator'
         msg += '\n\tSimulating a total of {} individuals'
         msg = msg.format(nargs, n_hr * n_nsz * tpw * np.sum(self.nums))
-        print(msg)
+        logger.info(msg)
+
         pool = Pool()
         try:
-            results = pool.map(get_single_oc_info, arguments)
+            results = pool.map(
+                partial(
+                    _get_single_oc_info,
+                    model=mov,
+                    range=self.range,
+                    season=self.season,
+                    trials=self.trials_per_world,
+                    max_individuals=self.max_individuals,
+                    nums=self.nums
+                ),
+                arguments
+            )
             pool.close()
             pool.join()
         except KeyboardInterrupt:
@@ -287,52 +303,29 @@ class OccupancyCalibrator(object):
         return parameters
 
 
-class Info(object):
-    __slots__ = [
-        'movement_model',
-        'home_range',
-        'niche_size',
-        'nums',
-        'trials',
-        'range',
-        'season',
-        'max_individuals']
+def _get_single_oc_info(
+        args,
+        model,
+        range,
+        season,
+        trials,
+        max_individuals,
+        nums):
+    home_range, niche_size = args
 
-    def __init__(
-            self,
-            movement_model,
-            home_range,
-            niche_size,
-            nums,
-            trials,
-            range_,
-            season,
-            max_individuals):
-
-        self.movement_model = movement_model
-        self.home_range = home_range
-        self.niche_size = niche_size
-        self.nums = nums
-        self.max_individuals = max_individuals
-        self.season = season
-        self.trials = trials
-        self.range = range_
-
-
-def get_single_oc_info(info):
-    site = ollin.Site.make_random(info.niche_size, range=info.range)
+    site = ollin.Site.make_random(niche_size, range=range)
     mov = ollin.Movement.simulate(
         site,
-        num=info.max_individuals,
-        home_range=info.home_range,
-        days=info.season,
-        movement_model=info.movement_model)
+        num=max_individuals,
+        home_range=home_range,
+        days=season,
+        movement_model=model)
 
-    n_nums = len(info.nums)
-    results = np.zeros([n_nums, info.trials])
+    n_nums = len(nums)
+    results = np.zeros([n_nums, trials])
 
-    for n, num in enumerate(info.nums):
-        for k in xrange(info.trials):
+    for n, num in enumerate(nums):
+        for k in xrange(trials):
             submov = mov.sample(num)
             oc = ollin.Occupancy(submov)
             results[n, k] = oc.occupancy

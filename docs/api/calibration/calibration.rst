@@ -1,4 +1,6 @@
 Calibration
 ===========
 
-hola
+.. toctree::
+  calibrate
+  calibrators
