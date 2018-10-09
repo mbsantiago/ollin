@@ -45,7 +45,7 @@ class MovementData(object):
 
     Attributes
     ----------
-    site : :py:obj:`ollin.Site`
+    site : :py:obj:`.Site`
         Information of Site at which movement took place.
     movement_data : array
         Array of shape [num_individuals, time_steps, 2] holding coordinate
@@ -55,7 +55,7 @@ class MovementData(object):
         place. Units are in days.
     home_range : float or None
         Home range value of species. Only necessary for occupancy calculation.
-        See :py:class:`ollin.Occupancy`.
+        See :py:class:`.Occupancy`.
 
     """
     def __init__(self, site, movement_data, times, home_range=None):
@@ -63,7 +63,7 @@ class MovementData(object):
 
         Arguments
         ---------
-        site : :py:obj:`ollin.Site`
+        site : :py:obj:`.Site`
             Information of Site at which movement took place.
         movement_data : array
             Array of shape [num_individuals, time_steps, 2] holding coordinate
@@ -73,7 +73,7 @@ class MovementData(object):
             place. Units are in days.
         home_range : float, optional
             Home range value of species. Only necessary for occupancy
-            calculation. See :py:class:`ollin.Occupancy`.
+            calculation. See :py:class:`.Occupancy`.
 
         """
         self.site = site
@@ -253,7 +253,7 @@ class MovementData(object):
            Color of line will be chosen at random from some colormap.
 
         All other components in the include list will be passed down to the
-        Site plotting method. See :py:meth:`ollin.Site.plot` for all plot
+        Site plotting method. See :py:meth:`.Site.plot` for all plot
         components defined at that level.
 
         Arguments
@@ -334,7 +334,7 @@ class Movement(MovementData):
 
     Attributes
     ----------
-    site : :py:obj:`ollin.Site`
+    site : :py:obj:`.Site`
         Information of Site at which movement took place.
     movement_data : array
         Array of shape [num_individuals, time_steps, 2] holding coordinate
@@ -344,8 +344,8 @@ class Movement(MovementData):
         place. Units are in days.
     home_range : float or None
         Home range value of species. Only necessary for occupancy calculation.
-        See :py:class:`ollin.Occupancy`.
-    movement_model : :py:obj:`ollin.MovementModel`
+        See :py:class:`.Occupancy`.
+    movement_model : :py:obj:`.MovementModel`
         Movement model used to generate movement.
     velocity : float
         Mean velocity (in Km/Day) used to movement simulation.
@@ -363,19 +363,19 @@ class Movement(MovementData):
 
         Arguments
         ---------
-        site : :py:obj:`ollin.Site`
+        site : :py:obj:`.Site`
             Site in which movement took place.
         movement_data : array
             Array of shape [num_individuals, time_steps, 2] holding coordinate
             information of all individuals along all simulated time steps.
-        movement_model : :py:obj:`ollin.MovementModel`
+        movement_model : :py:obj:`.MovementModel`
             Movement model used to generate movement_data.
         velocity : float
             Mean velocity (in Km/Day) used in the simulation.
         home_range : float, optional
             Home range of simulated species. Used mainly for occupancy
             calculation, or home range calibration. See
-            :py:class:`ollin.Occupancy`.
+            :py:class:`.Occupancy`.
 
         """
         self.movement_model = movement_model
@@ -417,11 +417,11 @@ class Movement(MovementData):
         estimate mean velocity (or density) with some degree of accuracy.
 
         Otherwise the user must first be sure that the model is calibrated.
-        See :py:mod:`ollin.calibration`.
+        See :py:mod:`.calibration`.
 
         Arguments
         ---------
-        site : :py:obj:`ollin.Site`
+        site : :py:obj:`.Site`
             Site in which simulate movement.
         days : int, optional
             Number of simulation days. Movement models include a steps_per_day
@@ -433,7 +433,7 @@ class Movement(MovementData):
         occupancy : float, optional
             If provided the relationship occupancy <-> density will be used to
             estimate the number of individuals to include in simulation. See
-            :py:func:`ollin.core.utils.occupancy_to_density`.
+            :py:func:`.core.utils.occupancy_to_density`.
         velocity : float, optional
             Mean velocity in Km/Day to use in movement model. If not given,
             home range argument must be provided.
@@ -441,8 +441,8 @@ class Movement(MovementData):
             Home range of simulated species. If provided the relationship
             home_range <-> mean velocity will be used to estimate the mean
             velocity of species. See
-            :py:func:`ollin.core.utils.home_range_to_velocity`.
-        movement_model : str or :py:obj:`ollin.movement_models.MovementModel`
+            :py:func:`.core.utils.home_range_to_velocity`.
+        movement_model : str or :py:obj:`.movement_models.MovementModel`
             Name of movement model in library o MovementModel instance to use
             to generate simulated movement.
 
@@ -594,7 +594,7 @@ class MovementAnalysis(object):
 
     Attributes
     ----------
-    movement : :py:obj:`ollin.MovementData`
+    movement : :py:obj:`.MovementData`
         Movement data analyzed.
     velocities : array
         Array of shape [num_individuals, time_steps - 1] holding all velocity

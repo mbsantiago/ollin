@@ -40,7 +40,7 @@ to define occupancy as the result of the following calculations:
 
       resolution = f(home_range, parameters)
 
-   See :py:func:`ollin.core.utils.occupancy_resolution`
+   See :py:func:`.occupancy_resolution`
 
 3. For each time step mark as visited all cells that have some individual of
    the target species contained in it.
@@ -85,7 +85,7 @@ class Occupancy(object):
 
     Attributes
     ----------
-    movement : :py:obj:`ollin.MovementData`
+    movement : :py:obj:`.MovementData`
         Movement data for which to calculate occupancy.
     steps : int
         Number of movement steps contained in movement data.
@@ -107,7 +107,7 @@ class Occupancy(object):
 
         Arguments
         ---------
-        movement : :py:obj:`ollin.MovementData`
+        movement : :py:obj:`.MovementData`
             Movement data to be analized.
         resolution : float, optional
             Resolution for space discretization. If none is given,
@@ -121,7 +121,7 @@ class Occupancy(object):
             resolution = occupancy_resolution(movement.home_range)
         self.resolution = resolution
 
-        self.grid = make_grid(self.movement, self.resolution)
+        self.grid = _make_grid(movement.data, range_, self.resolution)
         self.cell_occupancy = self.grid.sum(axis=0) / self.steps
         self.occupancy = self.cell_occupancy.mean()
 
@@ -149,7 +149,7 @@ class Occupancy(object):
             cells with occupancy heigher than some threshold will be plotted.
 
         All other components in the include list will be passed down to the
-        MovementData plotting method. See :py:meth:`ollin.MovementData.plot`
+        MovementData plotting method. See :py:meth:`.MovementData.plot`
         for all plot components defined at that level.
 
         Arguments
@@ -291,8 +291,3 @@ def _make_grid(array, range, resolution):
             x, y = indices[i, s]
             space[s, x, y] = 1
     return space
-
-
-def make_grid(mov, resolution):
-    """Make and return grid of occupancies from movement data."""
-    return _make_grid(mov.data, mov.site.range, resolution)

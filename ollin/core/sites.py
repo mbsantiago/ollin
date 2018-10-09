@@ -393,7 +393,7 @@ class Site(BaseSite):
         resolution : float, optional
             Spatial resolution to use for niche creation. If none is given it
             will be taken from the global constants. See
-            :py:const:`ollin.core.constants.GLOBAL_CONSTANTS`.
+            :py:const:`.GLOBAL_CONSTANTS`.
         range : int or float or list or tuple or array, optional
             Size of created site. If int or float it will be assumed that site
             is square. If none is given it will be taken from the global

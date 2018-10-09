@@ -14,7 +14,7 @@ class Model(EstimationModel):
     def estimate(self, detection, **kwargs):
         camera = detection.camera_configuration
         vor = Voronoi(camera.positions)
-        regions, vertices = voronoi_finite_polygons_2d(vor)
+        regions, vertices = _voronoi_finite_polygons_2d(vor)
 
         voronoi_areas = []
         range_box = box(0, 0, camera.range[0], camera.range[1])
@@ -34,7 +34,7 @@ class Model(EstimationModel):
         return OccupancyEstimate(occupancy, self, detection)
 
 
-def voronoi_finite_polygons_2d(vor, radius=None):
+def _voronoi_finite_polygons_2d(vor, radius=None):
     """
     Reconstruct infinite voronoi regions in a 2D diagram to finite
     regions.

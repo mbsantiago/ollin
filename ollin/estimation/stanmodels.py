@@ -75,7 +75,7 @@ class StanModel(EstimationModel):
 
         Arguments
         ---------
-        detection : :py:obj:`ollin.core.detection.Detection`
+        detection : :py:obj:`.Detection`
             Detection data.
         priors : dict
             Any priors parameters information should be stored here.

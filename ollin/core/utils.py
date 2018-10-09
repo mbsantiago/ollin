@@ -132,7 +132,7 @@ def occupancy_to_density(
     to density information. This relation also depends on the size of
     the home range in relation to the whole site's area, and to the proportion
     of available adequate space, or size of true niche, see
-    :py:meth:`ollin.core.sites.BaseSite.get_niche_size`. Each movement model
+    :py:meth:`.BaseSite.get_niche_size`. Each movement model
     produces a different relation between occupancy and density, but a single
     model (or family of functions) is applied to all movement models. The
     general relationship assumed is:
@@ -196,7 +196,7 @@ def density_to_occupancy(
     occupancy information. This relation also depends on the size of
     the home range in relation to the whole site's area, and to the proportion
     of available adequate space, or size of true niche, see
-    :py:meth:`ollin.core.sites.BaseSite.get_niche_size`. Each movement model
+    :py:meth:`.BaseSite.get_niche_size`. Each movement model
     produces a different relation between occupancy and density, but a single
     model (or family of functions) is applied to all movement models. The
     general relationship assumed is:
@@ -290,11 +290,11 @@ def velocity_modification(niche_size, parameters):
 
     The correction depends on the overall niche size, which is the proportion
     of total area with an adequate level of niche value (see
-    :py:meth:`ollin.core.site.BaseSite.get_niche_size`) and also on the
+    :py:meth:`.BaseSite.get_niche_size`) and also on the
     movement model used.
 
     Based on simulated data, the correct parameters for velocity correction can
-    be obtained. See :py:mod:`ollin.calibration.velocity`.
+    be obtained. See :py:mod:`.calibration`.
 
     Arguments
     ---------

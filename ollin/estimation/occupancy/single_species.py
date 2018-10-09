@@ -44,6 +44,7 @@ model {
 class Model(StanModel):
     """McKenzie Model for Single Species - Single Season occupancy estimation.
 
+    # TODO
 
     """
 

@@ -7,3 +7,9 @@ API Reference
   movement_models/movement models
   estimation/main
   calibration/calibration
+
+Main Functions
+==============
+
+.. automodule:: ollin
+  :members:

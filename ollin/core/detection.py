@@ -33,7 +33,7 @@ class CameraConfiguration(object):
         Distance to camera at which detection is posible.
     range : array
         Array of shape [2] specifying the dimensions of the virtual world.
-    site: :py:obj:`ollin.Site`
+    site: :py:obj:`.Site`
         Site object holding information about the virtual world.
     num_cams : int
         Number of cameras.
@@ -55,12 +55,12 @@ class CameraConfiguration(object):
             Array of shape [num_cams, 2] of camera positions.
         directions : list or tuple or array
             Array of shape [num_cams, 2] of camera pointing directions.
-        site : :py:obj:`ollin.core.sites.Site`
+        site : :py:obj:`.Site`
             Site in which to place cameras.
         cone_range : float, optional
             Distance to camera at which detection is possible. If not provided
             it will be extracted from global constants (see
-            :py:const:`ollin.core.constants.GLOBAL_CONSTANTS`).
+            :py:const:`.GLOBAL_CONSTANTS`).
         cone_angle : float, optional
             Viewing angle of camera in degrees. Default behaviour is as with
             cone_range.
@@ -87,7 +87,7 @@ class CameraConfiguration(object):
 
         Arguments
         ---------
-        mov : :py:obj:`ollin.core.movement.Movement`
+        mov : :py:obj:`.Movement`
             Movement data object to be detected by the camera configuration.
 
         Returns
@@ -124,7 +124,7 @@ class CameraConfiguration(object):
 
         All other components in the include list will be handed down to the
         Site's plotting method. See
-        :py:meth:`ollin.core.sites.Site.plot` to
+        :py:meth:`.Site.plot` to
         consult all plotting components defined at that level.
 
         Arguments
@@ -218,14 +218,14 @@ class CameraConfiguration(object):
         ---------
         num : int
             Number of cameras to place.
-        site : :py:obj:`ollin.core.sites.Site`
+        site : :py:obj:`.Site`
             Site in which to place cameras.
         min_distance : float, optional
             Minimum distance in between cameras.
         cone_range : float, optional
             Distance to camera at which detection is possible. If not provided
             it will be extracted from the global constants, see
-            :py:const:`ollin.core.constants.GLOBAL_CONSTANTS`.
+            :py:const:`.GLOBAL_CONSTANTS`.
         cone_angle : float, optional
             Viewing angle of camera in radians. Default behaviour is as with
             cone_range.
@@ -243,9 +243,9 @@ class CameraConfiguration(object):
             positions_y = np.random.uniform(0, range[1], size=(num))
             positions = np.stack([positions_x, positions_y], -1)
         else:
-            positions = make_random_camera_positions(
+            positions = _make_random_camera_positions(
                 num, range, min_distance=min_distance)
-        angles = make_random_directions(num)
+        angles = _make_random_directions(num)
         cam = cls(
             positions,
             angles,
@@ -271,7 +271,7 @@ class CameraConfiguration(object):
         ---------
         distance : float
             Distance between adjacent cameras in grid.
-        site : :py:obj:`ollin.core.sites.Site`
+        site : :py:obj:`.Site`
             Site in which to place cameras.
         cone_range : float, optional
             Distance to camera at which detection is possible. Default
@@ -301,7 +301,7 @@ class CameraConfiguration(object):
         positions = np.stack((X, Y), -1) + (np.array([shift_x, shift_y]) / 2)
         positions = positions.reshape([-1, 2])
         num = positions.size / 2
-        angles = make_random_directions(num)
+        angles = _make_random_directions(num)
         cam = cls(
             positions,
             angles,
@@ -311,7 +311,7 @@ class CameraConfiguration(object):
         return cam
 
 
-def make_random_camera_positions(num, range, min_distance):
+def _make_random_camera_positions(num, range, min_distance):
     """Create and return n random points in range separated by min distance.
 
     Arguments
@@ -369,7 +369,7 @@ def make_random_camera_positions(num, range, min_distance):
     return np.array(selection)
 
 
-def make_random_directions(num):
+def _make_random_directions(num):
     """Create and return n random direction vectors."""
     angles = np.random.uniform(0, 2*np.pi, size=[num])
     directions = np.stack([np.cos(angles), np.sin(angles)], -1)
@@ -432,16 +432,16 @@ class Detection(object):
         """Estimate occupancy and detectability from detection data.
 
         Use one of the estimation methods to estimate occupancy and
-        detectability, see (:py:mod:`ollin.estimation`)
+        detectability, see (:py:mod:`.estimation`)
 
         Arguments
         ---------
             type : str
                 Name of estimation method to use. See
-                :py:mod:`ollin.estimation` documentation for a full list.
+                :py:mod:`.estimation` documentation for a full list.
         Returns
         -------
-            estimate : :py:obj:`ollin.estimation.Estimate`
+            estimate : :py:obj:`.Estimate`
                 Estimate object containing estimation information.
 
         """
@@ -524,7 +524,7 @@ class Detection(object):
             vor = Voronoi(self.camera_configuration.positions)
             cmap = plt.get_cmap(detection_cmap)
             max_num = self.detection_nums.max()
-            regions, vertices = voronoi_finite_polygons_2d(vor)
+            regions, vertices = _voronoi_finite_polygons_2d(vor)
             nums = self.detection_nums
             for reg, num in zip(regions, nums):
                 polygon = vertices[reg]
@@ -571,7 +571,7 @@ class MovementDetection(Detection):
     detection_nums : array
         Array of shape [num_cams] with the total number of detections for each
         camera.
-    movement : :py:obj:`ollin.core.movement.Movement`
+    movement : :py:obj:`.Movement`
         Movement data being detected.
     grid : array
         Array of shape [num_individuals, time_steps, num_cameras] holding all
@@ -584,7 +584,7 @@ class MovementDetection(Detection):
 
         Arguments
         ---------
-        mov : :py:obj:`ollin.core.movement.Movement`
+        mov : :py:obj:`.Movement`
             Movement data being detected.
         cam : :py:obj:`CameraConfiguration`
             Cameras used for detection.
@@ -594,7 +594,7 @@ class MovementDetection(Detection):
         assert (cam.range == mov.site.range).all(), msg
 
         self.movement = mov
-        self.grid = make_detection_data(mov, cam)
+        self.grid = _make_detection_data(mov, cam)
         detections = np.amax(self.grid, axis=0)
 
         super(MovementDetection, self).__init__(cam, detections)
@@ -617,7 +617,7 @@ class MovementDetection(Detection):
 
         All other components in the include list will be passed down to the
         Movement plotting method. See
-        :py:meth:`ollin.core.movement.Movement.plot` for all plot
+        :py:meth:`.Movement.plot` for all plot
         components defined at that level.
 
         Arguments
@@ -661,11 +661,11 @@ class MovementDetection(Detection):
         return ax
 
 
-def make_detection_data(movement, camera_config):
+def _make_detection_data(movement, camera_config):
     """Generate and return detection data from movement and camera data.
 
     Movement data is held in the
-    :py:class:`ollin.core.movement.Movement` object and is represented
+    :py:class:`.Movement` object and is represented
     by an array of shape [num_individuals, time_steps, 2], which contains the
     full history of movement along the simulated time.
 
@@ -679,7 +679,7 @@ def make_detection_data(movement, camera_config):
 
     Arguments
     ---------
-    movement : :py:obj:`ollin.core.movement.Movement`
+    movement : :py:obj:`.Movement`
         Movement of individuals to detect.
     camera_config : :py:obj:`CameraConfiguration`
         Camera position and directions to use for detection
@@ -712,7 +712,7 @@ def make_detection_data(movement, camera_config):
     return detected
 
 
-def voronoi_finite_polygons_2d(vor, radius=None):
+def _voronoi_finite_polygons_2d(vor, radius=None):
     """Reconstruct infinite voronoi regions in a 2D diagram to finite regions.
 
     Arguments

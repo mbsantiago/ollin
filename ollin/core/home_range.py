@@ -11,7 +11,7 @@ Home range calculation follows the next pipeline:
 1. Inputs are Movement objects that contain position history of all
    simulated individuals for some number of steps
 2. Space is discretized using some resolution that only depends on the mean
-   velocity of the simulation. See :py:func:`home_range_resolution` to see the
+   velocity of the simulation. See :py:func:`.home_range_resolution` to see the
    functional relationship between mean velocity and space resolution
 3. For each individual, all pixels in discretized space occupied by the
    individual are counted, and an array with all presence-absence information
@@ -38,7 +38,7 @@ class HomeRange(object):
 
     Attributes
     ----------
-    movement : :py:obj:`ollin.core.movement.Movement`
+    movement : :py:obj:`.Movement`
         Underlying movement data.
     grid : array
         Array of shape [num_individuals, x, y] with prescence-absence
@@ -58,7 +58,7 @@ class HomeRange(object):
 
         Arguments
         ---------
-        movement : :py:obj:`ollin.core.movement.Movement`
+        movement : :py:obj:`.Movement`
             Movement data for which to calculate home ranges.
 
         """
@@ -97,7 +97,7 @@ class HomeRange(object):
 
         All other components in the include list will be passed down to the
         Movement plotting method. See
-        :py:meth:`ollin.core.movement.Movement.plot` for all plot
+        :py:meth:`.Movement.plot` for all plot
         components defined at that level.
 
         Arguments

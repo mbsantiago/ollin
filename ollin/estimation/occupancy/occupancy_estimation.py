@@ -5,7 +5,7 @@ from ..estimation import Estimate
 class OccupancyEstimate(Estimate):
     """Occupancy estimate container.
 
-    Extension of :py:class:`ollin.estimation.estimation.Estimate` class for
+    Extension of :py:class:`.Estimate` class for
     occupancy estimates.
 
     Attributes
@@ -15,9 +15,9 @@ class OccupancyEstimate(Estimate):
     detectability : float or None
         Estimated detectability. Some models do not provide an estimated
         detectability.
-    model : :py:obj:`ollin.estimation.estimation.EstimationModel`
+    model : :py:obj:`.EstimationModel`
         Model used to make estimate.
-    data : :py:obj:`ollin.core.detection.Detection`
+    data : :py:obj:`.Detection`
         Data used to make detection.
 
     """
@@ -32,9 +32,9 @@ class OccupancyEstimate(Estimate):
         ---------
         occupancy : float
             Estimated occupancy.
-        model : :py:obj:`ollin.estimation.estimation.EstimationModel`
+        model : :py:obj:`.EstimationModel`
             Model used for estimation.
-        data : :py:obj:`ollin.core.detection.Detection`
+        data : :py:obj:`.Detection`
             Detection data used for estimation.
         detectability : float, optional
             Estimated detectability.

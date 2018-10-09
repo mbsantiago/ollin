@@ -21,7 +21,7 @@ class MovementModel(object):
         Dictionary holding default values of any parameters associated with the
         movement model. There are some required parameters for every
         movement model. If not provided they will default to those in
-        :py:const:`ollin.core.constants.MOVEMENT_PARAMETERS`.
+        :py:mod:`.constants`.
 
     """
 
@@ -36,7 +36,7 @@ class MovementModel(object):
         passed as argument. If not found it will default to the value specified
         in the default_parameters dictionary of the movement model class. If
         not found it will default to the one specified in the constants module.
-        (see :py:const:`pycamptra.core.constants.MOVEMENT_PARAMETERS`)
+        (see :py:mod:`.constants`)
         """
         if params is None:
             params = {}
@@ -85,7 +85,7 @@ class MovementModel(object):
         initial_position : array
             Array of initial positions of shape [num, 2] to specify coordinates
             of individuals to be simulated.
-        site: :py:obj:`ollin.Site`
+        site: :py:obj:`.Site`
             Site in which to simulate movement.
         steps : int
             Number of steps to simulate.

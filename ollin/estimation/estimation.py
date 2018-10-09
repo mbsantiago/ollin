@@ -13,7 +13,7 @@ Hence any estimation model must implement its
 :py:meth:`EstimationModel.estimate` method. Estimation models must return an
 :py:class:`Estimate` object. Estimate objects should specialize to whatever is
 being estimated, see
-:py:class:`.occupancy.occupancy_estimation.OccupancyEstimate` for an example.
+:py:class:`.OccupancyEstimate` for an example.
 
 New estimation models must be placed within their corresponging directories.
 For example, any new occupancy estimation model should be placed in::
@@ -59,7 +59,7 @@ class Estimate(object):
     ----------
     model : :py:obj:`EstimationModel`
         Model used for estimation.
-    data : :py:obj:`ollin.core.detection.Detection`
+    data : :py:obj:`.Detection`
         Detection data used for estimation.
 
     """
@@ -71,7 +71,7 @@ class Estimate(object):
         ---------
         model : :py:obj:`EstimationModel`
             Model used for estimation.
-        data : :py:obj:`ollin.core.detection.Detection`
+        data : :py:obj:`.Detection`
             Detection data used for estimation.
 
         """
@@ -99,7 +99,7 @@ class EstimationModel(object):
         """Make estimate using detection data.
 
         Abstract method that must be overwritten by any estimation model. Its
-        argument must be a :py:obj:`ollin.core.detection.Detection` object, and
+        argument must be a :py:obj:`.Detection` object, and
         it must return a :py:obj:`Estimate`.
         """
         pass
