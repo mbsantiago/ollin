@@ -34,7 +34,7 @@ from .home_range import HomeRangeCalibrator
 from .occupancy import OccupancyCalibrator
 from .velocity import VelocityCalibrator
 
-from ..movement_models.basemodel import MovementModel
+from ..movement_models.base import MovementModel
 from .config import STARTING_PARAMETERS, BASE_CONFIG
 
 
