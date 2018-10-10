@@ -11,6 +11,10 @@ Welcome to ollin's documentation!
   :maxdepth: 2
   :caption: Contents:
 
+  installation/main
+  tutorials/main
+  contribute/main
+  libraries/main
   api/api
 
 ******************

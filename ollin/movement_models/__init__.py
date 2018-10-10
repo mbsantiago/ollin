@@ -31,15 +31,13 @@ def get_movement_model(model, parameters=None):
 
 
 def get_movement_model_list():
-    """Print all movement models in library."""
+    """Return all movement models in library."""
     path = os.path.dirname(os.path.abspath(__file__))
     python_files = [
         os.path.basename(module)[:-3]
         for module in glob.glob(os.path.join(path, '*.py'))]
     movement_models = [
         module for module in python_files
-        if (module != '__init__') and (module != 'basemodel')]
+        if (module != '__init__') and (module != 'base')]
 
-    print('Movement Model Library:')
-    for num, mov in enumerate(movement_models):
-        print('\t{}.- {}'.format(num + 1, mov))
+    return movement_models

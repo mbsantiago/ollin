@@ -158,12 +158,10 @@ def get_estimation_model_list(variable):
     python_files = [
         os.path.basename(module)[:-3]
         for module in glob.glob(os.path.join(path, '*.py'))]
-    movement_models = [
+    estimation_models = [
             module for module in python_files
             if (
                 (module != '__init__') and
-                (module != '{}_estimation'.format(variable)))]
+                (module != 'base'))]
 
-    print('{} Estimation Model Library:'.format(variable.title()))
-    for num, mov in enumerate(movement_models):
-        print('\t{}.- {}'.format(num + 1, mov))
+    return estimation_models

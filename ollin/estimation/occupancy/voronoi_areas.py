@@ -5,7 +5,7 @@ from scipy.spatial import Voronoi
 from shapely.geometry import box, Polygon
 
 from ..estimation import EstimationModel
-from .occupancy_estimation import OccupancyEstimate
+from .base import OccupancyEstimate
 
 
 class Model(EstimationModel):

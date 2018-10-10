@@ -82,7 +82,7 @@ pygments_style = 'sphinx'
 # a list of builtin themes.
 #
 # html_theme = 'classic'
-html_theme = "sphinx_rtd_theme"
+html_theme = "alabaster"
 
 html_logo = '_static/ollin.jpg'
 

@@ -1,11 +1,12 @@
 """Base class for all movement models."""
 
 from abc import abstractmethod, ABCMeta
-from six import iteritems
+from six import iteritems, add_metaclass
 
 from ..core.constants import MOVEMENT_PARAMETERS
 
 
+@add_metaclass(ABCMeta)
 class MovementModel(object):
     """Base class for all movement models.
 
@@ -25,7 +26,6 @@ class MovementModel(object):
 
     """
 
-    __metaclass__ = ABCMeta
     name = None
     default_parameters = {}
 

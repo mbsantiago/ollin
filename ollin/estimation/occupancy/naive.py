@@ -1,7 +1,7 @@
 from __future__ import division
 
 from ..estimation import EstimationModel
-from .occupancy_estimation import OccupancyEstimate
+from .base import OccupancyEstimate
 
 
 class Model(EstimationModel):

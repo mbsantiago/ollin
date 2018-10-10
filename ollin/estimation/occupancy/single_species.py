@@ -1,5 +1,5 @@
 from ..stanmodels import StanModel
-from .occupancy_estimation import OccupancyEstimate
+from .base import OccupancyEstimate
 
 CODE = u'''
 data {
