@@ -4,7 +4,7 @@
 Installation Guide
 ******************
 
-Installation of ollin is straight-forward with a normal python configuration.
+Installation of Ollin is straight-forward with a normal python configuration.
 To install ``python`` and its package manager ``pip`` see:
 
 :python: https://realpython.com/installing-python/
@@ -14,7 +14,7 @@ To install ``python`` and its package manager ``pip`` see:
 Installation with pip
 =====================
 
-To install ollin with pip package manager just run the following command in the
+To install Ollin with pip package manager just run the following command in the
 terminal::
 
   pip install ollin

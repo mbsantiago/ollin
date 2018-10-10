@@ -18,6 +18,7 @@ points at which niche values are known to be high and extrapolating by some
 kernel density estimation. This data could possibly arise from ecological and
 climatic variables, real telemetry data, or presence/absence data from camera
 traps studies.
+
 """
 from __future__ import division
 
@@ -331,7 +332,7 @@ class Site(BaseSite):
             Color of points used for kernel density estimation. Defaults to
             'red'.
         **kwargs : dict, optional
-            All other keyworded arguments will be passed to BaseSite plotting
+            All other keyword arguments will be passed to BaseSite plotting
             method.
 
         Returns

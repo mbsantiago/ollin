@@ -4,9 +4,48 @@ from .base import MovementAnalyzer
 
 
 class Analyzer(MovementAnalyzer):
+    r"""Velocity analyzer.
+
+    Velocity refers to change in distance per change in time at some step of
+    individual motion.
+
+    Hence if :math:`p(t_0) = (x_0, y_0)` and :math:`p(t_1) = (x_1, y_1)`
+    are the positions of an individual at times :math:`t_0` and :math:`t_1` then
+    the velocity at time :math:`t_1` is defined by:
+
+    .. math::
+
+        d_1 = (x_1 - x_0, y_1 - y_0)
+
+        vel = \frac{||d_1||}{t_1 - t_0}
+
+    """
     name = 'Velocities'
 
     def analyze(self, movement):
+        """Extract turn angles from movement data.
+
+        Get the turn angles of all individuals in movement data at every time
+        step. Will result in an array of size [num_individuals, time_steps - 2]
+        so that::
+
+            turn_angle = results[i, k]
+
+        Means that the ``i``-th individual had a turn angle of ``turn_angle``
+        at the ``k``-th time step.
+
+        Arguments
+        ---------
+        movement : :py:obj:`.Movement`
+            Movement data to analyze
+
+        Returns
+        -------
+        results : :py:obj:`array`
+            Array of shape [num_individuals, time_steps - 1] containing the
+            turn angles of all individuals at every time step.
+
+        """
         data = movement.data
         times = movement.times
 
@@ -51,6 +90,7 @@ class Analyzer(MovementAnalyzer):
             Alpha value of plot. Defaults to 0.8.
         log : bool, optional
             If true, yaxis in histogram will have logarithmic scale.
+
         """
         import matplotlib.pyplot as plt
         from matplotlib.cm import get_cmap

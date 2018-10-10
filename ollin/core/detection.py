@@ -30,7 +30,7 @@ class CameraConfiguration(object):
     cone_angle : float
         Viewing angle of cameras in degrees.
     cone_range : float
-        Distance to camera at which detection is posible.
+        Distance to camera at which detection is possible.
     range : array
         Array of shape [2] specifying the dimensions of the virtual world.
     site: :py:obj:`.Site`
@@ -148,7 +148,7 @@ class CameraConfiguration(object):
         camera_color : str, optional
             Color for camera position points.
         kwargs : dict
-            Other keyworded arguments will be passed to the CameraConfiguration
+            Other keyword arguments will be passed to the CameraConfiguration
             plot method.
 
         Returns
@@ -364,7 +364,7 @@ def _make_random_camera_positions(num, range, min_distance):
                 selection.append(point)
                 break
         if not selected:
-            raise RuntimeError('Cameras dont fit.')
+            raise RuntimeError("Cameras don't fit.")
 
     return np.array(selection)
 
@@ -379,7 +379,7 @@ def _make_random_directions(num):
 class Detection(object):
     """Class holding camera detection information.
 
-    Cameras left at site (virtual or real) will make detections at diferent
+    Cameras left at site (virtual or real) will make detections at different
     steps in time. Which cameras detected when can be stored in a binary
     matrix. This matrix can then be used for estimation of state variables.
 
@@ -459,7 +459,7 @@ class Detection(object):
             **kwargs):
         """Plot camera detection data.
 
-        Plots number of detections per camera by coloring the correponding
+        Plots number of detections per camera by coloring the corresponding
         Voronoi cell. The number of detections are transformed to [0, 1] scale
         and mapped to a color using a colormap.
 
@@ -494,7 +494,7 @@ class Detection(object):
         detection_alpha : float, optional
             Alpha value of Voronoi region's color fill.
         kwargs : dict, optional
-            Any additional keyworded arguments will be passed to the Camera
+            Any additional keyword arguments will be passed to the Camera
             Configuration plot method.
 
         Returns
@@ -552,7 +552,7 @@ class MovementDetection(Detection):
 
     indicates that at the i-th step the j-th
     individual was detected by the k-th camera. Hence more detailed
-    analysis is posible from such data.
+    analysis is possible from such data.
 
     Attributes
     ----------
@@ -602,7 +602,7 @@ class MovementDetection(Detection):
     def plot(self, ax=None, figsize=(10, 10), include=None, **kwargs):
         """Plot camera detection data.
 
-        Plots number of detections per camera by coloring the correponding
+        Plots number of detections per camera by coloring the corresponding
         Voronoi cell. The number of detections are transformed to [0, 1] scale
         and mapped to a color using a colormap.
 
@@ -632,7 +632,7 @@ class MovementDetection(Detection):
             components. Then components corresponding to Movement
             included in the list will be plotted.
         kwargs: dict, optional
-            All other keyworded arguments will be passed to Detection and
+            All other keyword arguments will be passed to Detection and
             Movement plotting methods.
 
         Returns

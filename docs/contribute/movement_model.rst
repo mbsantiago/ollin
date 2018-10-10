@@ -18,7 +18,7 @@ attribute::
   class Model(MovementModel):
     name = 'New Movement Model'
 
-Movement behaviour is implemented in the class method ``generate_movement``.
+Movement behaviour is implemented in the method ``generate_movement``.
 This method must have as arguments:
 
   1. The model instance (self).
@@ -79,6 +79,36 @@ instantiation, and are be available at ``self.parameters``. For example::
       movement = np.random.binomial(1, alpha, shape=[num, steps, 2])
       return movement
 
+Efficiency Considerations
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Movement simulation is generally a computationally expensive operation. Hence
+a careful though on its implementation is often necessary. Bare Python functions
+have large overhead due to the nature of the language, but there are many paths
+to greater efficiency:
+
+:numpy: The fundamental numerical python package. Numpy routines handle large
+        amounts of operations with optimized code, reducing the computing time
+        in considerable amounts. Numpy arrays and operations are used through
+        Ollin and are heavily recommended for any Movement Model
+        implementation. Check this guide_ to get started with Numpy.
+
+.. _guide: https://docs.scipy.org/doc/numpy-1.15.1/user/quickstart.html
+
+:numba: This wonderful library allows to make optimized compiled versions of
+        python functions while still having a simple interface and relative
+        ease-of-use. Many Numpy operations are compatible with Numba
+        compilation, but it does not support arbitrary functions. Check numba_
+        documentation on how to convert your functions into a optimized version
+        and to consult valid operations.
+
+.. _numba: http://numba.pydata.org/numba-doc/latest/user/5minguide.html
+
+:cython: Cython_ is a superset of Python language that compiles to optimized C
+         code that can be called from Python.
+
+.. _Cython: https://cython.readthedocs.io/en/latest/src/tutorial/cython_tutorial.html
+
 Calibration
 ^^^^^^^^^^^
 
@@ -136,6 +166,7 @@ parameters in the code file. So if::
 Then edit the file to::
 
   from ollin import MovementModel
+  import numpy as np
 
 
   class Model(MovementModel):

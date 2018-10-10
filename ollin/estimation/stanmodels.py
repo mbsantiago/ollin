@@ -15,9 +15,9 @@ Warning
 -----
 Since compilation is necessary, the first run of a Stan Estimation model will
 seem very slow. Compiled versions are stored so a second use of the estimation
-model will not incurr in such expensive overhead.
+model will not incur in such expensive overhead.
 
-Compilation is hardware and python version dependant, so no precompiled models
+Compilation is hardware and python version dependant, so no pre-compiled models
 are shipped with a standard ollin installation.
 
 Attributes
@@ -107,7 +107,7 @@ class StanModel(EstimationModel):
             Detection data from which to make estimate.
         method : {'MAP', 'sample'}, optional
             Method for inference. If 'MAP', Stan will try to find the
-            parameters at which likelyhood of the posterior distribution is a
+            parameters at which likelihood of the posterior distribution is a
             maximum. If 'sample', Stan will run the Hamiltonian Monte Carlo
             sampler to return a large sample of the posterior distribution.
             Defaults to 'MAP'.
@@ -119,7 +119,7 @@ class StanModel(EstimationModel):
         result : dict or :py:obj:`pystan.StanFit4Model`
             If method = 'MAP' it will return a dictionary with the
             parameter values at which a maximum (local) of the posterior
-            likelyhood was found. If method = 'sample' it will a
+            likelihood was found. If method = 'sample' it will a
             :py:obj:`pystan.StanFit4Model` object that contains all information
             of the sampling. See
             http://pystan.readthedocs.io/en/latest/api.html#pystan.StanModel.sampling.

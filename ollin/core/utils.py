@@ -219,7 +219,7 @@ def density_to_occupancy(
 
     Arguments
     ---------
-    denisty : float
+    density : float
     home_range_proportion : float
         Number in [0, 1] range representing the proportion of home range area
         to total area.

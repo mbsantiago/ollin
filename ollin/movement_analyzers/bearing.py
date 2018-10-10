@@ -88,6 +88,7 @@ class Analyzer(MovementAnalyzer):
             to 'Reds'.
         alpha : float, optional
             Alpha value of plot. Defaults to 0.8.
+
         """
         import matplotlib.pyplot as plt
         from matplotlib.cm import get_cmap

@@ -6,7 +6,7 @@ from .base import MovementAnalyzer
 class Analyzer(MovementAnalyzer):
     r"""Turn Angle analyzer.
 
-    Turn angle refers to the angle formed by two succesive steps of an
+    Turn angle refers to the angle formed by two successive steps of an
     individual motion.
 
     Hence if :math:`p(t_0) = (x_0, y_0)`, :math:`p(t_1) = (x_1, y_1)` and

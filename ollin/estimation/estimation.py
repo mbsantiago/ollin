@@ -15,10 +15,10 @@ Hence any estimation model must implement its
 being estimated, see
 :py:class:`.OccupancyEstimate` for an example.
 
-New estimation models must be placed within their corresponging directories.
+New estimation models must be placed within their corresponding directories.
 For example, any new occupancy estimation model should be placed in::
 
-    ollin/estimation/occupany/
+    ollin/estimation/occupancy/
 
 Libraries of estimation models for other state variables can also be built
 following the same structure, say::
@@ -52,8 +52,8 @@ class Estimate(object):
     and the estimation model used.
 
     This class is meant to serve as an interface for specialized estimates of
-    diferent state variables. Occupancy, abundance and other state variables
-    must have specialized Estimate clases.
+    different state variables. Occupancy, abundance and other state variables
+    must have specialized Estimate classes.
 
     Attributes
     ----------
@@ -124,7 +124,7 @@ def get_estimation_model(variable, name):
     ------
     Exception
         If no estimation model of the given name was found or some error
-        occured when loading.
+        occurred when loading.
 
     """
     path = os.path.join(

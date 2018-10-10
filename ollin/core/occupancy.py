@@ -113,6 +113,7 @@ class Occupancy(object):
             Resolution for space discretization. If none is given,
             resolution will be calculated from home_range data
             stored in the movement data.
+
         """
         self.movement = movement
         self.steps = movement.steps
@@ -121,6 +122,7 @@ class Occupancy(object):
             resolution = occupancy_resolution(movement.home_range)
         self.resolution = resolution
 
+        range_ = movement.site.range
         self.grid = _make_grid(movement.data, range_, self.resolution)
         self.cell_occupancy = self.grid.sum(axis=0) / self.steps
         self.occupancy = self.cell_occupancy.mean()
@@ -146,7 +148,7 @@ class Occupancy(object):
             :py:mod:`matplotlib.cm` to see all colormap options.
         2. "occupancy_contour":
             If present in include list, the border of the region containing all
-            cells with occupancy heigher than some threshold will be plotted.
+            cells with occupancy higher than some threshold will be plotted.
 
         All other components in the include list will be passed down to the
         MovementData plotting method. See :py:meth:`.MovementData.plot`
@@ -170,7 +172,7 @@ class Occupancy(object):
         occupancy_alpha : float, optional
             Alpha value of cell colors.
         kwargs : dict, optional
-            All other keyworded arguments will be passed to the MovementData's
+            All other keyword arguments will be passed to the MovementData's
             plotting method.
 
         Returns
@@ -245,6 +247,7 @@ class Occupancy(object):
         -------
         ax : :py:obj:`matplotlib.axes.Axes`, optional
             Axes of plot, returned for further plotting.
+
         """
         import matplotlib.pyplot as plt
 

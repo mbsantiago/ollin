@@ -41,7 +41,7 @@ class HomeRange(object):
     movement : :py:obj:`.Movement`
         Underlying movement data.
     grid : array
-        Array of shape [num_individuals, x, y] with prescence-absence
+        Array of shape [num_individuals, x, y] with presence-absence
         information.
     resolution : float
         Spatial resolution for space discretization.
@@ -177,7 +177,7 @@ def make_grid(array, range, resolution):
     """Make and return presence absence grid in discretized space.
 
     Given an array of shape [num, steps, 2] which encodes individual positions
-    at diferent time steps in a rectangular area of dimensions=range, and a
+    at different time steps in a rectangular area of dimensions=range, and a
     resolution for space discretization, calculates an array of presence and
     absence data of shape [num, x, y], where::
 

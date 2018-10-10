@@ -12,6 +12,7 @@ which also holds movement model information. See :py:class:`Movement`.
 Movement analysis, such as distribution of velocities, heading angles and
 turning angles can be extracted and stored in an :py:class:`MovementAnalysis`
 object.
+
 """
 from __future__ import division
 from __future__ import print_function
@@ -43,8 +44,8 @@ class MovementData(object):
     then the i-th individual was at the place with (x, y)-coordinates at the
     j-th time step.
 
-    Apart from spatial information, times at which the timesteps where taken
-    are store in another array of shape [time_steps].
+    Apart from spatial information, times at which the time steps where taken
+    are stored in another array of shape [time_steps].
 
     Attributes
     ----------
@@ -252,7 +253,7 @@ class MovementData(object):
         1. "trajectories":
            If present in include list, some trajectories will be plotted as a
            broken line. Trajectory simplification is possible through the
-           simplify keyworded argument. Several trajectories will be plotted.
+           simplify keyword argument. Several trajectories will be plotted.
            Color of line will be chosen at random from some colormap.
 
         All other components in the include list will be passed down to the
@@ -280,7 +281,7 @@ class MovementData(object):
             Trajectories will be forced to consist of this number of points, so
             if given, some time steps might be skipped.
         kwargs : dict, optional
-            All other keyworded arguments will be passed to the Site's plotting
+            All other keyword arguments will be passed to the Site's plotting
             method.
 
         Returns
@@ -439,8 +440,8 @@ class Movement(MovementData):
 
         Number of individuals and mean velocity must be specified, but it is
         also possible to use home range and/or occupancy as proxies for density
-        and mean velocity, respectively. The faithfullness of these proxies
-        depend on the correct calibration of the parameters asociated to the
+        and mean velocity, respectively. The faithfulness of these proxies
+        depend on the correct calibration of the parameters associated to the
         movement model.
 
         If using a movement model from the library, these should be
@@ -550,7 +551,7 @@ class Movement(MovementData):
 
         Use last position as starting point to generate new simulated
         movement and append to existing. This method will use the same mean
-        velicity and movement model to generate new movement.
+        velocity and movement model to generate new movement.
 
         Arguments
         ---------
