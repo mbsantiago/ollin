@@ -1,1 +1,1 @@
-from estimation import EstimationModel
+from .estimation import EstimationModel
