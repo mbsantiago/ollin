@@ -24,6 +24,15 @@ arguments:
   1. The model instance (self).
   2. The detection data (:py:obj:`.Detection`).
 
-And it must return an :py:obj:`.Estimate` object containing all relevant
-estimate information. Each state variable being estimated has a specialized
-Estimate class defining the relevant data to report in an estimation. 
+Select the correct return class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+At Ollin we try to standarize the way we make estimates of state variables.
+Hence we try to enforce that every estimation model returns the correct type of
+object. For every state variable we provide a specialized :py:class:`.Estimate`
+class for estimation returns. Hence if you are estimating occupancy, we ask
+that you return an object of type :py:class:`.OccupancyEstimate`.
+
+For example::
+
+  Hoa

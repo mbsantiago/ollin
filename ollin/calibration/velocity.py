@@ -258,5 +258,5 @@ def _get_single_velocity_info(args, model, range, days):
         velocity=velocity,
         days=days,
         movement_model=model)
-    analyzer = ollin.MovementAnalysis(mov)
-    return analyzer.velocities.mean(axis=1)
+    analyzer = mov.analyze('velocity')
+    return analyzer.results.mean(axis=1)
