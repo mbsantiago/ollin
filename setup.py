@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 version = {}
-with open("./axon_conabio/version.py") as fp:
+with open("./ollin/version.py") as fp:
     exec(fp.read(), version)
 
 setuptools.setup(
