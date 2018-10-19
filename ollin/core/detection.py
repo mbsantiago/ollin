@@ -13,7 +13,7 @@ import numpy as np
 from scipy.spatial import Voronoi, voronoi_plot_2d
 
 from .constants import GLOBAL_CONSTANTS
-from ..estimation.estimation import get_estimation_model
+from ..estimation import get_estimation_model
 
 
 class CameraConfiguration(object):

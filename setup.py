@@ -5,9 +5,13 @@ import setuptools
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+version = {}
+with open("./axon_conabio/version.py") as fp:
+    exec(fp.read(), version)
+
 setuptools.setup(
     name="ollin",
-    version="0.0.1",
+    version=version['__version__'],
     author="CONABIO, Santiago Martínez",
     author_email="santiago.mbal@gmail.com",
     description="Animal Motion Simulator",

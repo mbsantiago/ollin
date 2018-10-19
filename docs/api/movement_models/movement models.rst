@@ -1,6 +1,9 @@
 Movement Models
 ===============
 
+.. automodule:: ollin.movement_models
+  :members:
+
 Base Class
 ----------
 

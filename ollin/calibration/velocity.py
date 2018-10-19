@@ -8,7 +8,7 @@ from six.moves import range
 import numpy as np
 import ollin
 
-from ollin.core.utils import velocity_modification
+from ..core.utils import velocity_modification
 from .config import BASE_CONFIG
 
 

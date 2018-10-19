@@ -1,6 +1,9 @@
 Movement Analyzers
 ==================
 
+.. automodule:: ollin.movement_analyzers
+  :members:
+
 Base Class
 ----------
 

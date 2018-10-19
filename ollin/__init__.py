@@ -9,11 +9,9 @@ from .core.detection import (Detection,
 from .movement_models.base import MovementModel
 from .movement_models import get_movement_model_list, get_movement_model
 
-from .estimation.estimation import (get_estimation_model,
-                                    get_estimation_model_list)
+from .estimation import (get_estimation_model,
+                         get_estimation_model_list)
 from .calibration import calibrate
 from .movement_analyzers import (
     get_movement_analyzer_list,
     get_movement_analyzer)
-
-__version__ = '0.0.1'
