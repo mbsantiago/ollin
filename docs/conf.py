@@ -24,10 +24,8 @@ copyright = u'2018, CONABIO, Santiago Martínez'
 author = u'CONABIO, Santiago Martínez'
 
 
-version_ = {}
-with open("../axon_conabio/version.py") as fp:
-    exec(fp.read(), version_)
-version_ = version_['__version__']
+import ollin.version as version_
+version_ = version_.__version__
 
 # The short X.Y version
 version = '.'.join(version_.split('.')[0:2])
